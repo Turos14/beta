@@ -4,11 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Circuit 3D</title>
+  <meta name="description" content="Schémas de circuits électroniques, composants programmables, simulation et vue 3D.">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Circuit3D">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">&gt;_ circuit3d</div>
+    <div class="brand"><img src="icons/logo.svg" alt="" class="logo">circuit3d</div>
     <input id="projectName" class="project-name" spellcheck="false" title="Nom du projet">
     <nav class="tabs" id="tabs">
       <button data-tab="schema" class="active">Schéma</button>
@@ -18,6 +27,7 @@
       <button data-tab="json">JSON</button>
     </nav>
     <div class="actions">
+      <button id="btnInstall" class="install" title="Installer l'application sur cet appareil">⤓ installer<span class="long"> l'app</span></button>
       <button id="btnNew" title="Nouveau projet">nouveau</button>
       <button id="btnImport" title="Importer un fichier JSON">importer</button>
       <button id="btnDownload" title="Télécharger le projet en JSON">télécharger</button>
@@ -112,6 +122,14 @@
   </div>
 
   <div id="toast" class="toast"></div>
+
+  <dialog id="installDialog" class="dialog">
+    <h3><img src="icons/logo.svg" alt="" class="logo"> Installer Circuit 3D</h3>
+    <p>L'application s'installe comme une app classique (icône, fenêtre dédiée) et fonctionne <b>hors ligne</b>.</p>
+    <div id="installSteps"></div>
+    <p class="muted">Autre option : <a href="https://github.com/Turos14/beta/archive/refs/heads/main.zip">télécharger le code source (.zip)</a>, puis ouvrir <code>index.html</code>.</p>
+    <form method="dialog"><button>fermer</button></form>
+  </dialog>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>

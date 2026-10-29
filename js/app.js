@@ -300,6 +300,51 @@
   };
   $('projectName').oninput = (e) => { App.project.name = e.target.value; App.changed('name'); };
 
+  // ---- Installation (PWA) ----
+  let installPrompt = null;
+  const standalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+  function installSteps() {
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document)) {
+      return '<ol><li>Ouvrir cette page dans <b>Safari</b>.</li><li>Bouton <b>Partager</b> (carré avec une flèche).</li><li><b>Sur l\'écran d\'accueil</b>, puis <b>Ajouter</b>.</li></ol>';
+    }
+    if (/Android/.test(ua)) {
+      return '<ol><li>Menu du navigateur <b>⋮</b>.</li><li><b>Installer l\'application</b> ou <b>Ajouter à l\'écran d\'accueil</b>.</li></ol>';
+    }
+    if (/Firefox/.test(ua)) {
+      return '<p>Firefox ordinateur n\'installe pas les applications web : ouvrir cette page dans <b>Chrome</b> ou <b>Edge</b>, puis cliquer sur l\'icône d\'installation dans la barre d\'adresse.</p>';
+    }
+    if (/Safari/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) {
+      return '<ol><li>Menu <b>Fichier</b>.</li><li><b>Ajouter au Dock</b>.</li></ol>';
+    }
+    return '<ol><li>Cliquer sur l\'icône d\'installation (⊕ ou écran avec une flèche) à droite de la barre d\'adresse,</li><li>ou menu <b>⋮</b> → <b>Installer Circuit 3D</b>.</li></ol>';
+  }
+
+  if (standalone()) $('btnInstall').hidden = true;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    installPrompt = e;
+  });
+  window.addEventListener('appinstalled', () => {
+    installPrompt = null;
+    $('btnInstall').hidden = true;
+    App.toast('application installée');
+  });
+  $('btnInstall').onclick = async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const choice = await installPrompt.userChoice;
+      installPrompt = null;
+      if (choice.outcome === 'accepted') return;
+    }
+    $('installSteps').innerHTML = installSteps();
+    $('installDialog').showModal();
+  };
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* hors ligne indisponible */ });
+  }
+
   // ---- Barres d'outils ----
   document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => App.showTab(b.dataset.tab));
   $('btnRotate').onclick = rotateSelection;
