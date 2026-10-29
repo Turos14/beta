@@ -1,0 +1,43 @@
+# Recopie le dossier wiki/ dans le wiki GitHub du dépôt.
+# Prérequis (une fois) : activer Wikis et créer une première page depuis l'interface.
+name: Synchronisation du wiki
+
+on:
+  push:
+    branches: [main]
+    paths: ['wiki/**', '.github/workflows/wiki.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki
+  cancel-in-progress: false
+
+jobs:
+  wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publier le wiki
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          url="https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git"
+          if ! git clone --depth 1 "$url" wiki-repo; then
+            echo "::error::Wiki introuvable : activer Wikis et créer une première page (voir wiki/Deploiement.md)."
+            exit 1
+          fi
+          find wiki-repo -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -r wiki/. wiki-repo/
+          cd wiki-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki déjà à jour."
+          else
+            git commit -m "Synchronise le wiki depuis ${GITHUB_SHA::7}"
+            git push
+          fi

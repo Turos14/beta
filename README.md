@@ -4,6 +4,9 @@ Application web (HTML / CSS / JS, sans build) pour dessiner des schémas de circ
 électroniques, créer ses propres composants, les simuler et les voir en 3D.
 Thème terminal : fond noir, texte vert, police de VS Code.
 
+Documentation complète (composants, programmation, API de chaque fichier) :
+[wiki du projet](https://github.com/Turos14/beta/wiki) — sources dans [`wiki/`](wiki/).
+
 ## Lancer en local
 
 ```bash
