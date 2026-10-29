@@ -103,14 +103,27 @@ rouge sur le schéma et ignorée par la simulation et la 3D.
 
 ### Fil (`wires[]`)
 
+```json
+{ "id": "w1", "a": { "c": "bat", "p": "+" }, "b": { "x": 300, "y": 200 },
+  "pts": [[120, -40], [160, 60]], "color": "#ff4d4d" }
+```
+
 | Clé | Type | Description |
 |---|---|---|
 | `id` | string | Généré si absent (`w_xxxxxx`). |
-| `a` | `{ c, p }` | Extrémité 1 : id du composant + nom du pôle. |
-| `b` | `{ c, p }` | Extrémité 2. |
+| `a` | extrémité | Extrémité 1. |
+| `b` | extrémité | Extrémité 2. |
+| `pts` | `[[x, y], …]` | Facultatif. **Points de passage** dans l'ordre, de `a` vers `b`. Absent = tracé automatique. |
+| `color` | string | Facultatif. Couleur CSS du fil (`#rrggbb`). Absent = couleur du thème. |
 
-Un fil relie deux pôles **d'une même plaque**. Les fils sans `a` ou `b` sont supprimés au
-chargement. Le tracé (orthogonal) n'est pas stocké : il est recalculé à l'affichage.
+Une **extrémité** est soit :
+- un **pôle** : `{ "c": "<id composant>", "p": "<nom du pôle>" }` ;
+- un **point libre** : `{ "x": 300, "y": 200 }` (coordonnées du schéma, multiples de 10 conseillés).
+
+Un fil appartient à **une seule plaque**. Les extrémités libres situées exactement au même
+point d'une plaque sont électriquement reliées (jonction). Les fils dont une extrémité est
+invalide sont supprimés au chargement, ainsi que les points de passage non numériques. Le
+tracé complet n'est pas stocké : il est recalculé à l'affichage à partir de `a`, `pts` et `b`.
 
 Les liaisons **entre plaques** ne sont pas des fils : ce sont des instances de `connector`
 portant la même valeur `props.canal`.
@@ -130,6 +143,7 @@ message explicite, si :
 
 - Ajouter un composant à une plaque : copier une entrée de `components`, changer `id`, `x`, `y`.
 - Créer une nouvelle définition : copier une entrée de `library` et changer son `id`.
+- Recolorer tous les fils d'alimentation : ajouter `"color": "#ff4d4d"` aux fils concernés.
 - Renommer un pôle **en JSON** ne met pas à jour les fils : modifier aussi `wires[].a.p` / `b.p`
   (l'éditeur de composants, lui, le fait automatiquement).
 - Le JSON doit rester strict : guillemets doubles, pas de virgule finale, pas de commentaires.

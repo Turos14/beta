@@ -15,11 +15,15 @@ Un **nœud** (*net*) est un ensemble de pôles électriquement reliés. Ils sont
 **union-find** sur tout le projet :
 
 1. Chaque pôle de chaque instance reçoit une clé `plaque/composant/pôle`.
-2. Chaque fil fusionne ses deux pôles.
+2. Chaque fil fusionne ses deux extrémités. Une extrémité libre `{ x, y }` a pour clé
+   `pt:<plaque>:<x>,<y>` : toutes les extrémités libres au même point d'une plaque se
+   retrouvent donc dans le même nœud (**jonction**). Un fil dont l'autre bout est libre
+   et isolé prolonge simplement le nœud de son pôle, sans rien relier d'autre.
 3. Chaque pôle de type `link` (Connecteur) est fusionné avec un nœud virtuel
    `canal:<nom>`. Tous les connecteurs de même canal, **toutes plaques confondues**, se
    retrouvent donc dans le même nœud.
-4. On obtient `Sim.pinNet` : clé de pôle → identifiant du nœud.
+4. On obtient `Sim.pinNet` (clé de pôle → nœud) et `Sim.wireNet` (`plaque/fil` → nœud),
+   ce qui permet de colorer chaque fil selon sa tension, même s'il n'a aucun pôle.
 
 Au passage, chaque instance (sauf les connecteurs) est mise dans `Sim.items` avec sa
 définition, ses `props` fusionnés et sa fonction compilée.

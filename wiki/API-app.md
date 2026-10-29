@@ -41,8 +41,9 @@ Clic : `schemaView.addAt(type)` au centre. Glisser : le type passe dans `dataTra
 
 | Fonction | Rôle |
 |---|---|
-| `renderInspector()` | Selon la sélection : `inspectComp`, fiche du fil (extrémités + supprimer), ou fiche de la plaque (nom modifiable, statistiques, liaisons inter-plaques par canal, avec la mention « non relié » si le canal n'existe que sur une plaque). |
+| `renderInspector()` | Selon la sélection : `inspectComp`, `inspectWire`, ou fiche de la plaque (nom modifiable, statistiques, liaisons inter-plaques par canal, avec la mention « non relié » si le canal n'existe que sur une plaque). |
 | `inspectComp(box, b, c, def)` | Fiche d'une instance : description, étiquette, un champ par clé de `def.props` (type `color` pour `couleur`, `number` si la valeur par défaut est un nombre, sinon texte), pôles avec type et nombre de fils, boutons pivoter / supprimer. Les saisies modifient `c.label` / `c.props` et émettent `change('label' \| 'props')` sans reconstruire la fiche. |
+| `inspectWire(box, b, w)` | Fiche d'un fil : extrémités (`Composant.pôle` ou `point libre (x, y)`), couleur (sélecteur libre, bouton `défaut` et pastilles de `App.WIRE_COLORS`), tracé (nombre de points, `+ point de passage` au milieu du tracé, `tracé auto` pour tout effacer), aide sur les gestes, suppression. |
 | `deleteSelection()` | Supprime le composant (avec ses fils) ou le fil sélectionné, puis vide la sélection. |
 | `rotateSelection()` | Pivote le composant sélectionné de +90°. |
 
@@ -77,7 +78,16 @@ Clic : `schemaView.addAt(type)` au centre. Glisser : le type passe dans `dataTra
 |---|---|
 | `Suppr`, `Retour arrière` | `deleteSelection()` |
 | `R` | `rotateSelection()` |
+| `Entrée` | termine le fil en cours sur le dernier point (`schemaView.endWireHere()`) |
 | `Échap` | annule le fil en cours, sinon désélectionne |
+
+## Barre d'outils du schéma
+
+| Élément | Effet |
+|---|---|
+| menu `fil` (`#newWireColor`) | `App.state.wireColor` : couleur des prochains fils |
+| `terminer le fil` (`#btnEndWire`) | `schemaView.endWireHere()` |
+| `pivoter`, `supprimer`, `recentrer` | `rotateSelection()`, `deleteSelection()`, `schemaView.fit()` |
 
 ## Abonnements
 

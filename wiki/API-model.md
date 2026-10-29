@@ -10,7 +10,8 @@ Toutes les fonctions sont attachées à `App`.
 | `App.GRID` | `10` | Pas de la grille d'aimantation (px). |
 | `PIN_STEP` *(privé)* | `20` | Espacement entre deux pôles d'un même côté (px). |
 | `STORAGE_KEY` *(privé)* | `'circuit3d.project'` | Clé `localStorage`. |
-| `App.state` | `{ boardId, selection }` | Plaque affichée et sélection dans l'éditeur. |
+| `App.state` | `{ boardId, selection, wireColor }` | Plaque affichée, sélection dans l'éditeur, couleur des nouveaux fils. |
+| `App.WIRE_COLORS` | `[[couleur, libellé], …]` | Couleurs proposées pour les fils ; la première (`''`, « défaut ») = couleur du thème. |
 | `App.project` | objet | Projet courant, défini par `App.setProject`. |
 
 ---
@@ -70,15 +71,39 @@ Tourne un vecteur de `rot` degrés (0/90/180/270, sens horaire à l'écran). Les
 ### `App.pinWorld(comp, pinName) → { x, y, dir } | null`
 Position absolue (coordonnées du schéma) d'un pôle d'une instance, en tenant compte de la rotation autour du centre, et sa direction sortante pivotée. `null` si la définition ou le pôle n'existe pas.
 
+---
+
+## Fils
+
+Une extrémité de fil est un **pôle** `{ c, p }` ou un **point libre** `{ x, y }`.
+
+### `App.isPinEnd(end) → boolean`
+Vrai si l'extrémité est un pôle (`end.c` est une chaîne).
+
+### `App.sameEnd(u, v) → boolean`
+Vrai si deux extrémités désignent le même pôle, ou le même point libre.
+
+### `App.endPos(board, end) → { x, y, dir } | null`
+Position d'une extrémité. Pour un pôle : `App.pinWorld`, donc avec sa direction sortante. Pour un point libre : `dir = null`. `null` si le composant ou le pôle n'existe pas.
+
 ### `App.wirePath(board, wire) → [[x, y], …] | null`
-Points du tracé d'un fil (via `routePoints`). `null` si un composant ou un pôle est introuvable.
+Points du tracé complet d'un fil : `routePoints(endPos(a), endPos(b), wire.pts)`. `null` si une extrémité est introuvable.
 
-### `App.routePoints(A, B) → [[x, y], …]`
-Tracé orthogonal entre deux points `{ x, y, dir }`. `B.dir` est facultatif (fil « fantôme » vers le pointeur).
+### `App.routePoints(A, B, via) → [[x, y], …]`
+Tracé orthogonal entre deux positions `{ x, y, dir }`. `dir` peut être `null` (point libre, pointeur).
 
-1. Départ en `A`, petit segment de 10 px dans la direction du pôle.
-2. Si l'écart horizontal domine : horizontal jusqu'à une abscisse médiane (aimantée), vertical, puis horizontal. Sinon, l'inverse.
-3. Segment de 10 px vers `B`, puis arrivée en `B`.
+1. Départ en `A`, puis un segment de 10 px dans la direction du pôle s'il y en a une.
+2. **Sans `via`** (tracé automatique) : si l'écart horizontal domine, horizontal jusqu'à une abscisse médiane (aimantée), vertical, puis horizontal ; sinon l'inverse.
+3. **Avec `via`** (points de passage) : on rejoint chaque point, puis l'approche de `B`, par un coude à angle droit. Le premier segment suit l'axe du pôle de départ, les suivants commencent à l'horizontale.
+4. Un segment de 10 px vers `B` (si `B` a une direction), puis l'arrivée en `B`.
+
+Les points consécutifs identiques sont supprimés.
+
+### `App.bestViaIndex(board, wire, pt) → number`
+Position, dans `wire.pts`, où insérer `pt` pour que le tracé obtenu soit le plus court (distance de Manhattan). Sert à ajouter un point « là où l'on a cliqué » sans casser l'ordre des points existants.
+
+### `App.pinNear(board, pt, radius) → { c, p } | null`
+Pôle le plus proche de `pt` dans un rayon de `radius` px. Utilisé pour brancher une extrémité libre lâchée près d'un pôle.
 
 ### `App.boardBounds(board) → { x, y, w, h }`
 Rectangle englobant de tous les composants d'une plaque (avec une marge qui couvre toutes les rotations). Plaque vide : `{ 0, 0, 400, 300 }`. Utilisée pour recadrer la vue 2D et dimensionner les plaques 3D.
@@ -109,16 +134,23 @@ Ajoute une plaque vide (nom par défaut « Plaque N »), la rend courante, émet
 Crée une instance de `type` aimantée sur la grille. Un connecteur reçoit `props.canal = 'A'`. Émet `change('comp')`. `null` si le type est inconnu.
 
 ### `App.removeComponent(board, id)`
-Supprime l'instance et tous les fils qui y sont reliés. Émet `change('comp')`.
+Supprime l'instance et tous les fils dont une extrémité est un de ses pôles. Émet `change('comp')`.
 
-### `App.addWire(board, a, b) → fil | null`
-Ajoute un fil entre `a = { c, p }` et `b = { c, p }`. Refuse (retourne `null`) un fil d'un pôle vers lui-même ou un doublon, dans un sens comme dans l'autre. Émet `change('wire')`.
+### `App.addWire(board, a, b, extra) → fil | null`
+Ajoute un fil entre deux extrémités (pôle ou point libre). `extra` facultatif : `{ pts, color }` (une couleur vide est ignorée, les points sont copiés). Retourne `null` (sans rien ajouter) pour :
+- un fil d'une extrémité vers elle-même sans point de passage ;
+- un doublon pôle–pôle, dans un sens comme dans l'autre.
+
+Émet `change('wire')`.
+
+### `App.addViaPoint(board, wire, p)` *(défini dans schematic.js)*
+Insère le point `p = [x, y]` dans `wire.pts` à l'index donné par `bestViaIndex` (crée `pts` au besoin), puis émet `change('wire')`.
 
 ### `App.renamePin(type, oldName, newName)`
 Met à jour, dans toutes les plaques, les extrémités de fils qui pointaient vers `oldName` sur une instance de `type`. N'émet rien : l'appelant appelle `App.changed`.
 
 ### `App.pruneWires()`
-Supprime partout les fils dont un composant, une définition ou un pôle n'existe plus. N'émet rien.
+Supprime partout les fils dont une extrémité **pôle** pointe vers un composant, une définition ou un pôle qui n'existe plus. Les extrémités libres sont toujours valides. N'émet rien.
 
 ### `App.channels() → { [canal]: [{ board, comp }] }`
 Recense les connecteurs du projet, regroupés par valeur de `canal`. Sert à l'inspecteur (liste des liaisons) et à la vue 3D (câbles).

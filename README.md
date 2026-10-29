@@ -20,7 +20,7 @@ La vue 3D charge Three.js depuis un CDN (connexion internet requise).
 
 | Onglet | Rôle |
 |---|---|
-| **Schéma** | Éditeur 2D : palette à gauche (clic ou glisser-déposer), clic pôle → pôle pour câbler, `R` pivoter, `Suppr` effacer, molette / pincement pour zoomer. |
+| **Schéma** | Éditeur 2D : palette à gauche (clic ou glisser-déposer), clic pôle → pôle pour câbler (clics intermédiaires = points de passage, double-clic = extrémité libre, couleur au choix), `R` pivoter, `Suppr` effacer, molette / pincement pour zoomer. |
 | **Composants** | Créer ses composants : nom, rôle (« à quoi sert-il »), nombre de pôles, côté et type de chaque pôle, paramètres, forme 3D, contrôle interactif, affichage, et **programme JS** testable sur place. |
 | **Vue 3D** | Chaque schéma = une plaque (empilées ou côte à côte), câbles entre plaques, LED / moteurs / afficheurs animés pendant la simulation, composants cliquables. |
 | **Simulateur** | Tensions en direct sur les fils, interrupteurs, boutons, potentiomètres ; toutes les plaques sont simulées ensemble. |

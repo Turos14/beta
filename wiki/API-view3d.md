@@ -39,7 +39,7 @@ Adapte le renderer et le ratio de la caméra à la taille du conteneur.
    - `stack` : plaques empilées, la i-ème à `y = i × STACK_GAP`, avec quatre entretoises métalliques vers la suivante ;
    - `row` : plaques alignées sur l'axe X, 2 unités d'écart.
 2. **Plaque** : boîte verte de la taille de `App.boardBounds` + 1,5 unité de marge. Le dessus porte une texture « sérigraphie » (quadrillage, cadre, nom de la plaque), avec un contour vert lumineux.
-3. **Pistes** : un segment plat par portion du tracé de chaque fil (`App.wirePath`), dans un matériau propre au fil pour pouvoir l'éclairer selon la tension.
+3. **Pistes** : un segment plat par portion du tracé de chaque fil (`App.wirePath`, donc avec ses points de passage), dans un matériau propre au fil, de couleur `wire.color` (vert par défaut), pour pouvoir l'éclairer selon la tension. Chaque extrémité libre reçoit une pastille de la même couleur.
 4. **Composants** : `buildShape`, positionnés au centre du composant, rotation `−rot`. Une pastille dorée par pôle et une étiquette (sprite) au-dessus. Une étiquette jaune pour les valeurs (`display` `value` / `motor`).
 5. **Câbles inter-plaques** : pour chaque canal, un connecteur représentant par plaque, chaînés dans l'ordre des plaques. Tube coloré (une teinte par canal) le long d'une courbe Catmull-Rom :
    - empilées : sortie par le bord latéral des plaques, pour rester visible ;
@@ -56,7 +56,7 @@ Reporte l'état de la simulation sur la scène :
 | capuchon de bouton | `ui.pressed` | enfoncé de 0,07 |
 | bouton de potentiomètre | `ui.value` | rotation sur ±135° |
 | afficheurs | `state.text` | texte du sprite (redessiné seulement s'il change) |
-| pistes | tension du fil | lueur proportionnelle à la tension (au moins 15 % dès que le nœud est piloté, même à 0 V ; éteinte s'il est flottant), seulement pendant la simulation |
+| pistes | tension du fil (`Sim.wireValue`) | lueur proportionnelle à la tension (au moins 15 % dès que le nœud est piloté, même à 0 V ; éteinte s'il est flottant), seulement pendant la simulation |
 | câbles | tension du canal | lueur de 0,15 à 0,95 |
 
 ### `V3.show()`

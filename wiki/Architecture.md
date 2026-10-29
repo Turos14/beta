@@ -51,6 +51,7 @@ les fonctions internes restent privées, seules les propriétés ajoutées à `A
 | `App.project` | Le projet courant (voir [Format du projet JSON](Format-du-projet-JSON)). |
 | `App.state.boardId` | Id de la plaque (schéma) affichée. |
 | `App.state.selection` | `null`, `{ kind: 'comp', id }` ou `{ kind: 'wire', id }` dans l'éditeur. |
+| `App.state.wireColor` | Couleur appliquée aux nouveaux fils (`''` = couleur du thème). |
 | `App.Sim.*` | État de la simulation (temps, contrôles, mémoire, nœuds, tensions). |
 
 ## Bus d'événements

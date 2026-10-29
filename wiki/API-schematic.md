@@ -38,7 +38,8 @@ const view = new App.SchematicView(svgElement, 'edit' | 'sim');
 | `svg` | Élément `<svg>` géré. |
 | `mode` | `'edit'` ou `'sim'`. |
 | `views` | `{ [boardId]: { x, y, scale, fitted } }` : cadrage mémorisé par plaque. |
-| `pending` | Pôle de départ du fil en cours (`{ c, p }`) ou `null`. |
+| `pending` | Départ du fil en cours : pôle `{ c, p }`, point libre `{ x, y }`, ou `null`. |
+| `via` | Points de passage `[[x, y], …]` posés pendant le câblage en cours. |
 | `ghost` | Dernière position du pointeur pour le fil « fantôme ». |
 | `motorAngle` | Angles des moteurs (animation 2D). |
 | `ghostLayer` | Calque SVG du fil fantôme. |
@@ -58,12 +59,34 @@ Recadre sur `App.boardBounds` avec 40 px de marge, zoom borné entre 0,3 et 3. S
 ### `view.render()`
 Reconstruit tout le SVG :
 1. Motif de grille (points tous les 10 px) sur un grand rectangle de fond (`data-bg`).
-2. Fils : tracé visible + tracé large transparent cliquable (`data-wire`). En mode `sim`, classe `on` / `off` / `float` selon la tension et infobulle avec la tension (et « conflit »).
-3. Composants via `App.drawComponent`. Une instance de type inconnu est affichée `? type` en rouge. En mode `sim`, une erreur d'exécution est affichée au-dessus (`⚠ message`).
-4. Calque du fil fantôme.
+2. Fils : tracé visible (couleur `wire.color` en style inline, classe `colored`) + tracé large transparent cliquable (`data-wire`). En mode `sim`, classe `on` / `off` / `float` selon `Sim.wireValue` (un fil coloré est estompé à `off` / `float`) et infobulle avec la tension (et « conflit »).
+3. Extrémités libres : un carré `data-pt="x,y"` par point ; un point plein (`junction`) si plusieurs extrémités s'y rejoignent.
+4. Composants via `App.drawComponent`. Une instance de type inconnu est affichée `? type` en rouge. En mode `sim`, une erreur d'exécution est affichée au-dessus (`⚠ message`).
+5. Poignées du fil sélectionné (mode édition) : ronds `data-via="filId|index"` pour les points de passage, carrés `data-end="filId|a|b"` pour les extrémités libres.
+6. Calque du fil fantôme.
 
 ### `view.drawGhost(pt)`
-Dessine le fil en pointillés entre le pôle `pending` et le point `pt`.
+Dessine le fil en cours en pointillés (couleur `App.state.wireColor`) : de `pending`, par les points `via` (marqués), jusqu'au point `pt` aimanté.
+
+### `view.startWire(end)`
+Commence un fil depuis un pôle ou un point libre (vide `via`).
+
+### `view.finishWire(end) → fil | null`
+Termine le fil en cours sur `end` avec les points `via` et la couleur courante (`App.addWire`), sélectionne le fil créé et remet le câblage à zéro.
+
+### `view.endWireHere() → boolean`
+Termine le fil sur son **dernier point de passage**, qui devient une extrémité libre (bouton `terminer le fil`, touche `Entrée`). Affiche un message s'il n'y a encore aucun point.
+
+### `view.addVia(pt)`
+Ajoute un point de passage aimanté (ignoré s'il est identique au précédent) et redessine le fantôme.
+
+### `view.handleDouble(e) → boolean`
+Traite un double-clic en mode édition. Retourne `true` si le geste a été utilisé :
+- câblage en cours, hors pôle / extrémité libre : retire les points identiques posés par les deux clics, puis termine le fil en extrémité libre à cet endroit ;
+- sur un point de passage : le retire (et supprime `pts` s'il devient vide) ;
+- sur un fil : ajoute un point de passage (`App.addViaPoint`) et sélectionne le fil.
+
+L'élément visé est relu avec `document.elementFromPoint`, car le premier clic a pu re-dessiner le SVG.
 
 ### `view.bind()` *(appelée par le constructeur)*
 Pose les gestionnaires d'événements sur le SVG :
@@ -72,8 +95,10 @@ Pose les gestionnaires d'événements sur le SVG :
 |---|---|---|
 | molette | tous | `zoomAt` ×1,15 / ÷1,15 sous le pointeur |
 | 2 doigts | tous | pincement = zoom |
-| clic pôle | edit | 1er clic : début de fil ; 2e clic : `App.addWire` |
-| clic ailleurs avec un fil en cours | edit | annule le fil |
+| 2 appuis < 400 ms et < 6 px | edit | double-clic : `handleDouble` (détection maison, le navigateur n'émet pas `dblclick` quand le SVG est re-dessiné entre deux clics) |
+| appui sur une poignée du fil sélectionné | edit | glisser un point de passage ou une extrémité libre ; au relâchement, une extrémité près d'un pôle (8 px) s'y branche (`App.pinNear`) ; `change('wire')` |
+| clic pôle ou carré d'extrémité libre | edit | sans fil en cours : `startWire` ; sinon `finishWire` |
+| clic ailleurs avec un fil en cours | edit | pose un point de passage (`addVia`) ; un glisser déplace la vue sans annuler |
 | appui composant | edit | sélection + déplacement aimanté (`change('move')` au relâchement) |
 | appui composant | sim | `switch` : bascule ; `button` : appuyé jusqu'au relâchement ; `slider` : position selon le pointeur, suivie pendant le glisser |
 | clic fil | edit | sélection du fil |
@@ -88,6 +113,11 @@ Zoome d'un facteur `factor` (échelle bornée entre 0,2 et 6) en gardant fixe le
 
 ### `view.cancelWire() → boolean`
 Annule le fil en cours. Retourne `true` s'il y en avait un (utilisé par `Échap`).
+
+## Fonctions publiques ajoutées à `App`
+
+### `App.addViaPoint(board, wire, p)`
+Voir [API model.js](API-model#appaddviapointboard-wire-p-défini-dans-schematicjs).
 
 ## Fonctions privées
 

@@ -12,13 +12,15 @@ Simulateur. Objet public : **`App.Sim`**. Le fonctionnement général est décri
 | `ui` | `{ [compKey]: { on, pressed, value } }` | État des contrôles interactifs. |
 | `states` | `{ [compKey]: object }` | `state` mémorisé de chaque instance. |
 | `pinNet` | `{ [pinKey]: netId }` | Nœud de chaque pôle. |
+| `wireNet` | `{ ["plaque/fil"]: netId }` | Nœud de chaque fil (y compris les fils sans pôle). |
 | `netVal` | `{ [netId]: number }` | Tension des nœuds pilotés (un nœud absent est flottant). |
 | `conflicts` | `{ [netId]: true }` | Nœuds pilotés par des tensions différentes. |
 | `errors` | `{ [compKey]: string }` | Dernière erreur d'exécution par instance. |
 | `items` | array | Instances simulées : `{ key, board, comp, def, props, fn }`. |
 | `dirty` | boolean | Nœuds à reconstruire avant le prochain calcul. |
 
-**Clés** : `compKey = "<boardId>/<compId>"`, `pinKey = "<boardId>/<compId>/<pôle>"`.
+**Clés** : `compKey = "<boardId>/<compId>"`, `pinKey = "<boardId>/<compId>/<pôle>"`,
+extrémité libre : `"pt:<boardId>:<x>,<y>"` (privée, utilisée seulement pour l'union-find).
 
 ## Constantes et caches privés
 
@@ -41,7 +43,7 @@ Compile `def.logic` avec `new Function('inp', 'props', 'state', 'ui', 't', code)
 État du contrôle de l'instance `key`, créé à `{ on: false, pressed: false, value: 0.5 }` au premier accès.
 
 ### `Sim.rebuild()`
-Reconstruit `items` et `pinNet` pour tout le projet (union-find sur les fils et les canaux des connecteurs), puis remet `dirty` à `false`. Détails : [Simulateur §1](Simulateur#1-construction-des-nœuds--simrebuild).
+Reconstruit `items`, `pinNet` et `wireNet` pour tout le projet (union-find sur les extrémités des fils, les jonctions d'extrémités libres et les canaux des connecteurs), puis remet `dirty` à `false`. Détails : [Simulateur §1](Simulateur#1-construction-des-nœuds--simrebuild).
 
 ### `Sim.evaluate()`
 Calcule un état stable au temps `t` : reconstruit si `dirty`, itère jusqu'à stabilité (40 itérations au plus) puis met à jour `netVal`, `conflicts`, `states` et `errors`. N'émet pas d'événement. Détails : [Simulateur §2](Simulateur#2-un-pas-de-simulation--simevaluate).
@@ -51,6 +53,12 @@ Tension du nœud relié à ce pôle, `null` s'il est flottant.
 
 ### `Sim.netOf(boardId, compId, pin) → netId`
 Identifiant du nœud du pôle (utile pour comparer deux pôles ou lire `conflicts`).
+
+### `Sim.wireValue(boardId, wireId) → number | null`
+Tension du nœud d'un fil (`null` = flottant). Sert à colorer les fils en 2D et en 3D.
+
+### `Sim.wireConflict(boardId, wireId) → boolean`
+Vrai si le nœud du fil est en conflit.
 
 ### `Sim.stateOf(boardId, compId) → object`
 `state` mémorisé de l'instance (`{}` par défaut).
@@ -85,6 +93,9 @@ Exécute **une fois** le programme d'une définition, hors circuit (zone « test
 ---
 
 ## Fonctions privées
+
+### `endKey(boardId, end) → string`
+Clé union-find d'une extrémité de fil : `pinKey` pour un pôle, `pt:<plaque>:<x>,<y>` pour un point libre.
 
 ### `normalizeOut(v, props) → number | null`
 Convertit une valeur retournée par un programme : `true` → `props.V` (ou 5), `false` → 0, `null` / `undefined` / `''` → `null`, nombre (ou chaîne numérique) → nombre, autre → `null`.
