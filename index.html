@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Circuit 3D</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">&gt;_ circuit3d</div>
+    <input id="projectName" class="project-name" spellcheck="false" title="Nom du projet">
+    <nav class="tabs" id="tabs">
+      <button data-tab="schema" class="active">Schéma</button>
+      <button data-tab="library">Composants</button>
+      <button data-tab="view3d">Vue 3D</button>
+      <button data-tab="sim">Simulateur</button>
+      <button data-tab="json">JSON</button>
+    </nav>
+    <div class="actions">
+      <button id="btnNew" title="Nouveau projet">nouveau</button>
+      <button id="btnImport" title="Importer un fichier JSON">importer</button>
+      <button id="btnDownload" title="Télécharger le projet en JSON">télécharger</button>
+      <input type="file" id="fileInput" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- Liste des schémas (plaques) du projet -->
+    <aside class="sidebar" id="sidebar">
+      <div class="side-title">// plaques</div>
+      <ul id="boardList" class="board-list"></ul>
+      <button id="btnAddBoard" class="wide">+ nouveau schéma</button>
+
+      <div class="side-title" id="paletteTitle">// palette</div>
+      <ul id="palette" class="palette"></ul>
+    </aside>
+
+    <main class="main">
+      <!-- SCHÉMA -->
+      <section class="view active" id="view-schema">
+        <div class="toolbar">
+          <span class="hint">glisser un composant · cliquer pin → pin pour câbler · molette = zoom · glisser le fond = déplacer</span>
+          <span class="spacer"></span>
+          <button id="btnRotate">pivoter</button>
+          <button id="btnDelete">supprimer</button>
+          <button id="btnFit">recentrer</button>
+        </div>
+        <div class="work">
+          <div class="canvas-wrap"><svg id="schemaSvg" class="schema-svg"></svg></div>
+          <div class="inspector" id="inspector"></div>
+        </div>
+      </section>
+
+      <!-- BIBLIOTHÈQUE DE COMPOSANTS -->
+      <section class="view" id="view-library">
+        <div class="work">
+          <div class="lib-list">
+            <div class="side-title">// bibliothèque</div>
+            <ul id="libList" class="board-list"></ul>
+            <button id="btnNewComp" class="wide">+ nouveau composant</button>
+          </div>
+          <div class="lib-editor" id="libEditor"></div>
+        </div>
+      </section>
+
+      <!-- VUE 3D -->
+      <section class="view" id="view-view3d">
+        <div class="toolbar">
+          <span class="hint">clic gauche = tourner · clic droit = déplacer · molette = zoom · clic sur un composant interactif quand la simulation tourne</span>
+          <span class="spacer"></span>
+          <label>disposition
+            <select id="layout3d">
+              <option value="stack">empilées</option>
+              <option value="row">côte à côte</option>
+            </select>
+          </label>
+          <button id="btnSimToggle3d" class="sim-toggle">▶ simuler</button>
+        </div>
+        <div class="canvas-wrap" id="view3dWrap"></div>
+      </section>
+
+      <!-- SIMULATEUR -->
+      <section class="view" id="view-sim">
+        <div class="toolbar">
+          <button id="btnSimToggle" class="sim-toggle">▶ simuler</button>
+          <button id="btnSimReset">réinitialiser</button>
+          <span class="hint">cliquer sur interrupteurs / boutons · glisser les potentiomètres</span>
+          <span class="spacer"></span>
+          <span id="simStatus" class="status">arrêté</span>
+        </div>
+        <div class="work">
+          <div class="canvas-wrap"><svg id="simSvg" class="schema-svg"></svg></div>
+          <div class="inspector" id="simPanel"></div>
+        </div>
+      </section>
+
+      <!-- JSON -->
+      <section class="view" id="view-json">
+        <div class="toolbar">
+          <button id="btnJsonApply">appliquer</button>
+          <button id="btnJsonFormat">formater</button>
+          <button id="btnJsonReload">recharger depuis le projet</button>
+          <span class="spacer"></span>
+          <span id="jsonStatus" class="status"></span>
+        </div>
+        <textarea id="jsonEditor" class="code json-editor" spellcheck="false"></textarea>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/model.js"></script>
+  <script src="js/sim.js"></script>
+  <script src="js/schematic.js"></script>
+  <script src="js/library-editor.js"></script>
+  <script src="js/view3d.js"></script>
+  <script src="js/json-editor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
