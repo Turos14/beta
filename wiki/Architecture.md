@@ -8,6 +8,9 @@ espace de noms global : **`window.App`**.
 
 ```
 index.html                 structure de la page (onglets, vues, panneaux)
+manifest.webmanifest       manifeste PWA : nom, icônes, couleurs, mode « standalone »
+sw.js                      service worker : installation et fonctionnement hors ligne
+icons/                     logo.svg (source) + icônes PNG générées (favicon, Apple, Android, maskable)
 css/style.css              thème noir / vert, police de VS Code, responsive
 js/library.js              App.DEFAULT_LIBRARY : composants par défaut
 js/model.js                projet, événements, géométrie, sauvegarde
@@ -97,6 +100,26 @@ Les vues ne gardent aucune copie du projet : elles le relisent entièrement à c
   se fait autour de son centre.
 - **3D** : 1 unité = 20 px (`S = 1/20`). Le point schéma `(x, y)` devient `(x, hauteur, y)`
   relativement au centre de la plaque ; une rotation schéma `θ` devient `rotation.y = −θ`.
+
+## Application installable (PWA)
+
+| Fichier | Rôle |
+|---|---|
+| `manifest.webmanifest` | Nom « Circuit 3D », `start_url` / `scope` relatifs (`./`, compatibles avec le sous-dossier `/beta/` de GitHub Pages), affichage `standalone`, fond et thème noirs, icônes SVG, 192, 512 et maskable 512. |
+| `sw.js` | Service worker, enregistré par `app.js` (sauf en `file://`). |
+| `icons/logo.svg` | Logo source : puce isométrique avec pistes lumineuses. |
+| `icons/*.png` | Rendus du logo : `favicon-32`, `apple-touch-icon` (180, fond noir), `icon-192`, `icon-512`, `icon-maskable-512` (logo réduit à 78 % sur fond noir, pour les icônes rognées en cercle). |
+
+### Stratégie de cache (`sw.js`)
+
+| Ressource | Stratégie | Pourquoi |
+|---|---|---|
+| fichiers de l'app (même origine) | **réseau d'abord**, copie en cache ; cache en secours hors ligne (`index.html` pour toute navigation) | les mises à jour arrivent sans changer de version de cache |
+| Three.js et OrbitControls (CDN) | **cache d'abord** | version figée (r128), inutile de retélécharger |
+
+- `install` : met en cache la liste `CORE` (tous les fichiers de l'app). Les fichiers du CDN sont ajoutés à part : un échec ne bloque pas l'installation, seule la 3D serait alors indisponible hors ligne.
+- `activate` : supprime les caches d'une autre version que `CACHE` (`circuit3d-v1`), puis prend le contrôle des pages ouvertes.
+- Ajouter un fichier à l'app : l'ajouter à `CORE` dans `sw.js` **et** à la copie du workflow `pages.yml`.
 
 ## Choix techniques
 

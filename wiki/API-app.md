@@ -65,6 +65,17 @@ Clic : `schemaView.addAt(type)` au centre. Glisser : le type passe dans `dataTra
 - `nouveau` : demande « vide » ou « demo » (`prompt`), puis charge `emptyProject()` ou `demoProject()`.
 - Nom du projet : la saisie met à jour `project.name` (`change('name')`).
 
+### Installation (PWA)
+
+| Élément | Rôle |
+|---|---|
+| `installPrompt` | Événement `beforeinstallprompt` mis de côté (Chrome, Edge, Android) pour déclencher l'installation au clic. |
+| `standalone()` | Vrai si l'app tourne déjà installée (`display-mode: standalone`, ou `navigator.standalone` sur iOS) : le bouton `installer` est alors masqué. |
+| `installSteps()` | Instructions HTML selon l'appareil, détecté par le user-agent : iPhone/iPad, Android, Firefox, Safari Mac, ou par défaut Chrome/Edge. |
+| `#btnInstall` | Si `installPrompt` existe : fenêtre d'installation native ; refusée ou indisponible : ouvre `#installDialog` avec `installSteps()` et le lien vers le .zip du code. |
+| `appinstalled` | Masque le bouton et affiche « application installée ». |
+| enregistrement | `navigator.serviceWorker.register('sw.js')` si disponible et hors `file://` ; un échec est ignoré. |
+
 ### Utilitaires
 
 | Fonction | Rôle |

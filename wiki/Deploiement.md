@@ -10,8 +10,8 @@ Workflow : `.github/workflows/pages.yml`.
 | pull request | `verif` seulement |
 | lancement manuel (*Actions → Run workflow*) | `verif` puis `deploy` |
 
-1. **verif** : `node --check` sur chaque fichier `js/*.js` (erreurs de syntaxe).
-2. **deploy** : copie `index.html`, `css/` et `js/` dans `_site/` (avec un `.nojekyll`), puis
+1. **verif** : `node --check` sur chaque fichier `js/*.js` et sur `sw.js`, puis validation JSON de `manifest.webmanifest`.
+2. **deploy** : copie `index.html`, `manifest.webmanifest`, `sw.js`, `css/`, `js/` et `icons/` dans `_site/` (avec un `.nojekyll`), puis
    publication via `actions/upload-pages-artifact` et `actions/deploy-pages`.
 
 Prérequis, une seule fois : *Settings → Pages → Build and deployment → Source : GitHub Actions*.
@@ -39,6 +39,16 @@ synchronisation suivante. Modifier les fichiers de `wiki/` et pousser.
 - Liens internes sans extension : `[Simulateur](Simulateur)`.
 - `_Sidebar.md` et `_Footer.md` : barre latérale et pied de page communs.
 
+## Régénérer les icônes
+
+Les PNG de `icons/` sont des rendus de `icons/logo.svg`. Après une modification du logo, les
+régénérer aux mêmes tailles (32, 180, 192, 512, et 512 « maskable » avec le logo à 78 % sur
+fond noir), par exemple avec Chromium/Playwright ou Inkscape :
+
+```bash
+inkscape icons/logo.svg -w 512 -h 512 -o icons/icon-512.png
+```
+
 ## En local
 
 Aucun build :
@@ -47,5 +57,6 @@ Aucun build :
 python3 -m http.server 8000     # puis http://localhost:8000
 ```
 
-Ouvrir `index.html` directement (`file://`) fonctionne aussi, mais la vue 3D a besoin
-d'internet pour charger Three.js depuis les CDN.
+Ouvrir `index.html` directement (`file://`) fonctionne aussi, mais sans service worker :
+ni installation, ni mode hors ligne, et la vue 3D a besoin d'internet pour charger Three.js.
+L'installation demande HTTPS ou `localhost`.

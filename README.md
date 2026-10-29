@@ -7,6 +7,11 @@ Thème terminal : fond noir, texte vert, police de VS Code.
 Documentation complète (composants, programmation, API de chaque fichier) :
 [wiki du projet](https://github.com/Turos14/beta/wiki) — sources dans [`wiki/`](wiki/).
 
+## Installer l'application
+
+Sur https://turos14.github.io/beta/, bouton **⤓ installer l'app** : l'application
+s'installe sur ordinateur ou téléphone (PWA) et fonctionne hors ligne.
+
 ## Lancer en local
 
 ```bash
@@ -60,6 +65,9 @@ GitHub Pages à chaque push sur `main`. À activer une fois dans
 
 ```
 index.html
+manifest.webmanifest  manifeste PWA (installation)
+sw.js                 service worker (hors ligne)
+icons/                logo et icônes
 css/style.css
 js/library.js         composants par défaut
 js/model.js           projet, géométrie, sauvegarde

@@ -1,5 +1,25 @@
 # Prise en main
 
+## Installer l'application
+
+Bouton **`⤓ installer l'app`** en haut à droite. L'application s'installe comme une app
+classique (icône sur le bureau ou l'écran d'accueil, fenêtre dédiée) et fonctionne
+**hors ligne**, 3D comprise, après une première visite en ligne.
+
+| Appareil | Comment |
+|---|---|
+| Chrome / Edge (ordinateur, Android) | le bouton ouvre directement la fenêtre d'installation du navigateur |
+| iPhone / iPad | Safari → **Partager** → **Sur l'écran d'accueil** (le bouton affiche ces étapes) |
+| Safari Mac | **Fichier** → **Ajouter au Dock** |
+| Firefox ordinateur | pas d'installation d'app web : utiliser Chrome ou Edge |
+
+Les mises à jour de l'application sont récupérées automatiquement au lancement, dès qu'une
+connexion est disponible. Une fois installée, l'app garde ses projets dans son propre
+stockage : utiliser `télécharger` / `importer` pour passer un projet du navigateur à l'app.
+
+Autre option : télécharger le code source
+([.zip](https://github.com/Turos14/beta/archive/refs/heads/main.zip)) et ouvrir `index.html`.
+
 ## Barre du haut
 
 | Élément | Rôle |

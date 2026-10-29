@@ -4,7 +4,7 @@ Application web pour dessiner des schémas de circuits électroniques, créer et
 **programmer ses propres composants**, simuler le circuit et le visualiser en **3D**
 sous forme de plaques reliées entre elles.
 
-- Application en ligne : https://turos14.github.io/beta/
+- Application en ligne : https://turos14.github.io/beta/ — installable sur ordinateur et téléphone, utilisable hors ligne ([Prise en main](Prise-en-main#installer-lapplication))
 - Code source : https://github.com/Turos14/beta
 - Technologies : HTML, CSS, JavaScript « vanilla » (aucune étape de build), [Three.js r128](https://threejs.org/) pour la 3D.
 
