@@ -274,7 +274,8 @@
       b.wires.forEach(w => {
         const pts = App.wirePath(b, w);
         if (!pts) return;
-        const tm = mat('#2fbf55', { metalness: 0.5, roughness: 0.4, emissive: new THREE.Color('#33ff66'), emissiveIntensity: 0 });
+        const color = w.color || '#2fbf55';
+        const tm = mat(color, { metalness: 0.5, roughness: 0.4, emissive: new THREE.Color(w.color || '#33ff66'), emissiveIntensity: 0 });
         for (let k = 0; k < pts.length - 1; k++) {
           const a = toLocal(pts[k][0], pts[k][1]), c = toLocal(pts[k + 1][0], pts[k + 1][1]);
           const len = a.distanceTo(c);
@@ -285,7 +286,14 @@
           seg.rotation.y = -Math.atan2(c.z - a.z, c.x - a.x);
           group.add(seg);
         }
-        dyn.traces.push({ mat: tm, board: b.id, c: w.a.c, p: w.a.p });
+        // Pastille sur les extrémités libres
+        ['a', 'b'].forEach(k => {
+          if (App.isPinEnd(w[k])) return;
+          const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.03, 12), tm);
+          pad.position.copy(toLocal(w[k].x, w[k].y)); pad.position.y += 0.015;
+          group.add(pad);
+        });
+        dyn.traces.push({ mat: tm, board: b.id, wire: w.id });
       });
 
       // Composants
@@ -398,7 +406,7 @@
     dyn.knobs.forEach(k => { k.obj.rotation.y = (0.5 - ui(k.key).value) * Math.PI * 1.5; });
     dyn.texts.forEach(t => { const s = st(t.key); t.sprite.setText(s.text != null ? String(s.text) : '--'); });
     const level = (x) => {
-      const v = Sim.valueAt(x.board, x.c, x.p);
+      const v = x.wire ? Sim.wireValue(x.board, x.wire) : Sim.valueAt(x.board, x.c, x.p);
       return v === null ? 0 : Math.min(1, Math.max(0.15, v / 5));
     };
     dyn.traces.forEach(t => { t.mat.emissiveIntensity = Sim.running ? level(t) * 0.9 : 0; });
