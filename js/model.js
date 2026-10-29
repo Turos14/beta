@@ -4,7 +4,8 @@
  * Projet :
  *  { name, version, library: [définitions], schematics: [ { id, name, components, wires } ] }
  *  composant (instance) : { id, type, x, y, rot, label, props }
- *  fil                  : { id, a: { c: idComposant, p: nomPôle }, b: { c, p } }
+ *  fil                  : { id, a: extrémité, b: extrémité, pts?: [[x, y]…], color?: '#rrggbb' }
+ *  extrémité de fil     : { c: idComposant, p: nomPôle } ou point libre { x, y }
  * Les plaques sont reliées entre elles par les connecteurs de même canal.
  */
 (function () {
@@ -14,7 +15,13 @@
   const listeners = {};
 
   App.GRID = GRID;
-  App.state = { boardId: null, selection: null };
+  App.state = { boardId: null, selection: null, wireColor: '' };
+
+  // Couleurs proposées pour les fils ('' = couleur du thème)
+  App.WIRE_COLORS = [
+    ['', 'défaut'], ['#ff4d4d', 'rouge'], ['#4da6ff', 'bleu'], ['#ffd84d', 'jaune'],
+    ['#ff9f40', 'orange'], ['#f0f0f0', 'blanc'], ['#9e9e9e', 'gris'], ['#c77dff', 'violet'], ['#00e5ff', 'cyan']
+  ];
 
   // ---- Événements ----
   App.on = (evt, fn) => { (listeners[evt] = listeners[evt] || []).push(fn); };
@@ -79,29 +86,81 @@
     return { x: comp.x + g.w / 2 + rx, y: comp.y + g.h / 2 + ry, dir };
   };
 
-  // Tracé orthogonal d'un fil : liste de points
-  App.wirePath = function (board, wire) {
-    const ca = App.findComp(board, wire.a.c), cb = App.findComp(board, wire.b.c);
-    if (!ca || !cb) return null;
-    const A = App.pinWorld(ca, wire.a.p), B = App.pinWorld(cb, wire.b.p);
-    if (!A || !B) return null;
-    return App.routePoints(A, B);
+  // ---- Fils ----
+  App.isPinEnd = (end) => !!end && typeof end.c === 'string';
+  App.sameEnd = (u, v) => App.isPinEnd(u)
+    ? App.isPinEnd(v) && u.c === v.c && u.p === v.p
+    : !App.isPinEnd(v) && u.x === v.x && u.y === v.y;
+
+  // Position d'une extrémité ; dir = null pour un point libre
+  App.endPos = function (board, end) {
+    if (!App.isPinEnd(end)) return { x: end.x, y: end.y, dir: null };
+    const c = App.findComp(board, end.c);
+    return c ? App.pinWorld(c, end.p) : null;
   };
 
-  App.routePoints = function (A, B) {
+  // Tracé orthogonal d'un fil : liste de points
+  App.wirePath = function (board, wire) {
+    const A = App.endPos(board, wire.a), B = App.endPos(board, wire.b);
+    if (!A || !B) return null;
+    return App.routePoints(A, B, wire.pts);
+  };
+
+  // Sans points de passage : tracé automatique en 3 segments.
+  // Avec : coudes à angle droit d'un point au suivant (le premier segment suit
+  // la direction du pôle de départ, les suivants commencent à l'horizontale).
+  App.routePoints = function (A, B, via) {
     const S = GRID;
-    const p1 = [A.x + A.dir[0] * S, A.y + A.dir[1] * S];
+    const p1 = A.dir ? [A.x + A.dir[0] * S, A.y + A.dir[1] * S] : [A.x, A.y];
     const p2 = B.dir ? [B.x + B.dir[0] * S, B.y + B.dir[1] * S] : [B.x, B.y];
     const pts = [[A.x, A.y], p1];
-    if (Math.abs(p2[0] - p1[0]) >= Math.abs(p2[1] - p1[1])) {
+    if (via && via.length) {
+      let cur = p1, horizFirst = A.dir ? A.dir[0] !== 0 : true;
+      via.concat([p2]).forEach(n => {
+        if (cur[0] !== n[0] && cur[1] !== n[1]) pts.push(horizFirst ? [n[0], cur[1]] : [cur[0], n[1]]);
+        pts.push(n);
+        cur = n;
+        horizFirst = true;
+      });
+    } else if (Math.abs(p2[0] - p1[0]) >= Math.abs(p2[1] - p1[1])) {
       const mx = App.snap((p1[0] + p2[0]) / 2);
-      pts.push([mx, p1[1]], [mx, p2[1]]);
+      pts.push([mx, p1[1]], [mx, p2[1]], p2);
     } else {
       const my = App.snap((p1[1] + p2[1]) / 2);
-      pts.push([p1[0], my], [p2[0], my]);
+      pts.push([p1[0], my], [p2[0], my], p2);
     }
-    pts.push(p2, [B.x, B.y]);
-    return pts;
+    pts.push([B.x, B.y]);
+    return pts.filter((p, i) => i === 0 || p[0] !== pts[i - 1][0] || p[1] !== pts[i - 1][1]);
+  };
+
+  // Index où insérer un point de passage pour allonger le moins possible le tracé
+  App.bestViaIndex = function (board, wire, pt) {
+    const A = App.endPos(board, wire.a), B = App.endPos(board, wire.b);
+    const via = wire.pts || [];
+    let best = 0, bestLen = Infinity;
+    for (let i = 0; i <= via.length; i++) {
+      const trial = via.slice(0, i).concat([pt], via.slice(i));
+      const pts = App.routePoints(A, B, trial);
+      let len = 0;
+      for (let k = 1; k < pts.length; k++) len += Math.abs(pts[k][0] - pts[k - 1][0]) + Math.abs(pts[k][1] - pts[k - 1][1]);
+      if (len < bestLen) { bestLen = len; best = i; }
+    }
+    return best;
+  };
+
+  // Pôle le plus proche d'un point (rayon en px), pour accrocher une extrémité libre
+  App.pinNear = function (board, pt, radius) {
+    let found = null, bestD = radius;
+    board.components.forEach(c => {
+      const def = App.getDef(c.type);
+      if (!def) return;
+      def.pins.forEach(p => {
+        const w = App.pinWorld(c, p.name);
+        const d = w && Math.hypot(w.x - pt.x, w.y - pt.y);
+        if (w && d <= bestD) { bestD = d; found = { c: c.id, p: p.name }; }
+      });
+    });
+    return found;
   };
 
   App.boardBounds = function (board) {
@@ -179,8 +238,15 @@
         c.x = +c.x || 0; c.y = +c.y || 0; c.rot = +c.rot || 0;
         c.props = c.props && typeof c.props === 'object' ? c.props : {};
       });
-      s.wires = s.wires.filter(w => w && w.a && w.b);
-      s.wires.forEach(w => { w.id = w.id || App.uid('w'); });
+      const validEnd = e => e && (typeof e.c === 'string' ? typeof e.p === 'string' : isFinite(e.x) && isFinite(e.y));
+      s.wires = s.wires.filter(w => w && validEnd(w.a) && validEnd(w.b));
+      s.wires.forEach(w => {
+        w.id = w.id || App.uid('w');
+        ['a', 'b'].forEach(k => { if (!App.isPinEnd(w[k])) w[k] = { x: +w[k].x, y: +w[k].y }; });
+        if (Array.isArray(w.pts)) w.pts = w.pts.filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1])).map(p => [+p[0], +p[1]]);
+        else delete w.pts;
+        if (typeof w.color !== 'string' || !w.color) delete w.color;
+      });
     });
     return out;
   };
@@ -219,13 +285,16 @@
     App.changed('comp');
   };
 
-  App.addWire = function (board, a, b) {
-    if (a.c === b.c && a.p === b.p) return null;
-    const dup = board.wires.some(w =>
-      (w.a.c === a.c && w.a.p === a.p && w.b.c === b.c && w.b.p === b.p) ||
-      (w.a.c === b.c && w.a.p === b.p && w.b.c === a.c && w.b.p === a.p));
+  // a, b : pôle { c, p } ou point libre { x, y } ; extra : { pts, color } facultatifs
+  App.addWire = function (board, a, b, extra) {
+    extra = extra || {};
+    if (App.sameEnd(a, b) && !(extra.pts && extra.pts.length)) return null;
+    const dup = App.isPinEnd(a) && App.isPinEnd(b) && board.wires.some(w =>
+      (App.sameEnd(w.a, a) && App.sameEnd(w.b, b)) || (App.sameEnd(w.a, b) && App.sameEnd(w.b, a)));
     if (dup) return null;
     const w = { id: App.uid('w'), a, b };
+    if (extra.pts && extra.pts.length) w.pts = extra.pts.map(p => [p[0], p[1]]);
+    if (extra.color) w.color = extra.color;
     board.wires.push(w);
     App.changed('wire');
     return w;
@@ -242,12 +311,12 @@
   };
   App.pruneWires = function () {
     App.project.schematics.forEach(s => {
-      s.wires = s.wires.filter(w => {
-        const ca = App.findComp(s, w.a.c), cb = App.findComp(s, w.b.c);
-        if (!ca || !cb) return false;
-        const da = App.getDef(ca.type), db = App.getDef(cb.type);
-        return da && db && da.pins.some(p => p.name === w.a.p) && db.pins.some(p => p.name === w.b.p);
-      });
+      const ok = (e) => {
+        if (!App.isPinEnd(e)) return true;
+        const c = App.findComp(s, e.c), d = c && App.getDef(c.type);
+        return !!d && d.pins.some(p => p.name === e.p);
+      };
+      s.wires = s.wires.filter(w => ok(w.a) && ok(w.b));
     });
   };
 

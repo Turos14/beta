@@ -2,7 +2,8 @@
  * Simulateur logique / tensions.
  *
  * Tous les pôles reliés par des fils (et les connecteurs de même canal, toutes plaques
- * confondues) forment un nœud. À chaque pas, chaque composant lit la tension de ses
+ * confondues) forment un nœud. Les extrémités libres de fils posées au même point
+ * d'une plaque sont reliées entre elles (jonction). À chaque pas, chaque composant lit la tension de ses
  * nœuds d'entrée et impose une valeur sur ses sorties via son code `logic`. On itère
  * jusqu'à stabilité. Plusieurs sorties sur un même nœud : la plus haute l'emporte
  * (et le nœud est signalé en conflit). Un nœud sans source est flottant (null).
@@ -17,6 +18,7 @@
     ui: {},         // clé composant -> { on, pressed, value }
     states: {},     // clé composant -> état mémorisé (state)
     pinNet: {},     // clé pôle -> id de nœud
+    wireNet: {},    // "plaque/fil" -> id de nœud
     netVal: {},     // id de nœud -> tension | null
     conflicts: {},  // id de nœud -> true
     errors: {},     // clé composant -> message d'erreur
@@ -26,6 +28,8 @@
   const compKey = (boardId, compId) => boardId + '/' + compId;
   const pinKey = (boardId, compId, pin) => boardId + '/' + compId + '/' + pin;
   Sim.compKey = compKey;
+  // Clé d'une extrémité de fil : pôle, ou point libre de la plaque
+  const endKey = (boardId, e) => App.isPinEnd(e) ? pinKey(boardId, e.c, e.p) : 'pt:' + boardId + ':' + e.x + ',' + e.y;
 
   Sim.compile = function (def) {
     const cache = compiled[def.id];
@@ -69,10 +73,12 @@
           Sim.items.push({ key: compKey(s.id, c.id), board: s, comp: c, def, props, fn: Sim.compile(def) });
         }
       });
-      s.wires.forEach(w => union(pinKey(s.id, w.a.c, w.a.p), pinKey(s.id, w.b.c, w.b.p)));
+      s.wires.forEach(w => union(endKey(s.id, w.a), endKey(s.id, w.b)));
     });
     Sim.pinNet = {};
-    Object.keys(parent).forEach(k => { if (!k.startsWith('canal:')) Sim.pinNet[k] = find(k); });
+    Object.keys(parent).forEach(k => { if (!k.startsWith('canal:') && !k.startsWith('pt:')) Sim.pinNet[k] = find(k); });
+    Sim.wireNet = {};
+    App.project.schematics.forEach(s => s.wires.forEach(w => { Sim.wireNet[s.id + '/' + w.id] = find(endKey(s.id, w.a)); }));
     Sim.dirty = false;
   };
 
@@ -149,6 +155,11 @@
     return v === undefined ? null : v;
   };
   Sim.netOf = (boardId, compId, pin) => Sim.pinNet[pinKey(boardId, compId, pin)];
+  Sim.wireValue = function (boardId, wireId) {
+    const v = Sim.netVal[Sim.wireNet[boardId + '/' + wireId]];
+    return v === undefined ? null : v;
+  };
+  Sim.wireConflict = (boardId, wireId) => !!Sim.conflicts[Sim.wireNet[boardId + '/' + wireId]];
   Sim.stateOf = (boardId, compId) => Sim.states[compKey(boardId, compId)] || {};
 
   // ---- Boucle ----
