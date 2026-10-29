@@ -37,6 +37,14 @@ placer un **Connecteur** sur chacune avec le même **canal** (ex. `PWR`).
 Boutons `télécharger` / `importer` : export et import du projet en `.json`.
 Le projet est aussi sauvegardé automatiquement dans le navigateur.
 
+## Exemples
+
+| Fichier | Contenu |
+|---|---|
+| [`examples/calculateur-binaire.json`](examples/calculateur-binaire.json) | Calculateur binaire 4 bits (+ − × ÷) sur 3 plaques ; voir le [wiki](https://github.com/Turos14/beta/wiki/Exemple-calculateur-binaire). |
+
+À ouvrir avec le bouton `importer`.
+
 ## Programmer un composant
 
 Le code est le corps d'une fonction `(inp, props, state, ui, t)` qui retourne les

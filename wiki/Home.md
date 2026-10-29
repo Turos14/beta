@@ -14,6 +14,7 @@ sous forme de plaques reliées entre elles.
 - [Prise en main](Prise-en-main) — les 5 onglets, raccourcis, plusieurs plaques
 - [Composants de base](Composants-de-base) — tous les composants fournis et leur code
 - [Programmer un composant](Programmer-un-composant) — API `inp / props / state / ui / t`, exemples
+- [Exemple : calculateur binaire](Exemple-calculateur-binaire) — projet prêt à importer : + − × ÷ sur 4 bits, 3 plaques
 
 ### Technique
 - [Architecture](Architecture) — fichiers, ordre de chargement, événements, flux de données

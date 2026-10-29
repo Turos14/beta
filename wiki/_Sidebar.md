@@ -4,6 +4,7 @@
 - [Prise en main](Prise-en-main)
 - [Composants de base](Composants-de-base)
 - [Programmer un composant](Programmer-un-composant)
+- [Exemple : calculateur binaire](Exemple-calculateur-binaire)
 
 **Technique**
 - [Architecture](Architecture)

@@ -1,0 +1,2771 @@
+{
+  "name": "Calculateur binaire",
+  "version": 1,
+  "library": [
+    {
+      "id": "battery",
+      "name": "Pile",
+      "category": "Alimentation",
+      "color": "#d64545",
+      "description": "Source de tension continue. Le pôle + impose V volts, le pôle − impose 0 V.",
+      "pins": [
+        {
+          "name": "+",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "-",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "cylinder",
+      "logic": "return { '+': props.V, '-': 0 };"
+    },
+    {
+      "id": "gnd",
+      "name": "Masse",
+      "category": "Alimentation",
+      "color": "#888888",
+      "w": 60,
+      "description": "Référence 0 V commune du circuit.",
+      "pins": [
+        {
+          "name": "GND",
+          "side": "top",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "box",
+      "logic": "return { GND: 0 };"
+    },
+    {
+      "id": "vcc",
+      "name": "VCC",
+      "category": "Alimentation",
+      "color": "#e67e22",
+      "w": 60,
+      "description": "Rail d'alimentation à tension fixe.",
+      "pins": [
+        {
+          "name": "VCC",
+          "side": "bottom",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "box",
+      "logic": "return { VCC: props.V };"
+    },
+    {
+      "id": "switch",
+      "name": "Interrupteur",
+      "category": "Commandes",
+      "color": "#3fa7d6",
+      "description": "Laisse passer la tension de A vers B lorsqu'il est fermé. Cliquer pour basculer.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "switch",
+      "display": "none",
+      "shape3d": "switch",
+      "logic": "return { B: ui.on ? inp.A : null };"
+    },
+    {
+      "id": "button",
+      "name": "Bouton poussoir",
+      "category": "Commandes",
+      "color": "#2e86c1",
+      "description": "Contact momentané : A est relié à B tant que le bouton est maintenu.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "button",
+      "display": "none",
+      "shape3d": "button",
+      "logic": "return { B: ui.pressed ? inp.A : null };"
+    },
+    {
+      "id": "pot",
+      "name": "Potentiomètre",
+      "category": "Commandes",
+      "color": "#8e44ad",
+      "description": "Diviseur de tension réglable : OUT varie entre GND et VCC selon le curseur.",
+      "pins": [
+        {
+          "name": "VCC",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "GND",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "OUT",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "slider",
+      "display": "none",
+      "shape3d": "pot",
+      "logic": "const lo = inp.GND || 0, hi = inp.VCC || 0;\nreturn { OUT: lo + (hi - lo) * ui.value };"
+    },
+    {
+      "id": "clock",
+      "name": "Horloge",
+      "category": "Commandes",
+      "color": "#16a085",
+      "description": "Génère un signal carré de fréquence freq (Hz).",
+      "pins": [
+        {
+          "name": "OUT",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "freq": 1,
+        "V": 5
+      },
+      "interactive": "none",
+      "display": "led",
+      "shape3d": "chip",
+      "logic": "const high = Math.floor(t * props.freq * 2) % 2 === 1;\nstate.light = high ? 1 : 0;\nreturn { OUT: high ? props.V : 0 };"
+    },
+    {
+      "id": "resistor",
+      "name": "Résistance",
+      "category": "Passifs",
+      "color": "#c8a165",
+      "description": "Limite le courant. En simulation logique, transmet la tension de A vers B.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "ohms": 220
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "resistor",
+      "logic": "return { B: inp.A };"
+    },
+    {
+      "id": "led",
+      "name": "LED",
+      "category": "Sorties",
+      "color": "#ff3b3b",
+      "description": "Diode électroluminescente : s'allume quand A − K dépasse le seuil.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "K",
+          "side": "right",
+          "type": "in"
+        }
+      ],
+      "props": {
+        "seuil": 1.8,
+        "couleur": "#ff3b3b"
+      },
+      "interactive": "none",
+      "display": "led",
+      "shape3d": "led",
+      "logic": "const v = (inp.A || 0) - (inp.K || 0);\nstate.light = v >= props.seuil ? Math.min(1, v / 5 + 0.3) : 0;\nreturn {};"
+    },
+    {
+      "id": "motor",
+      "name": "Moteur",
+      "category": "Sorties",
+      "color": "#7f8c8d",
+      "description": "Moteur à courant continu : la vitesse dépend de A − B, le signe donne le sens.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "in"
+        }
+      ],
+      "props": {
+        "Vmax": 5
+      },
+      "interactive": "none",
+      "display": "motor",
+      "shape3d": "motor",
+      "logic": "state.speed = ((inp.A || 0) - (inp.B || 0)) / props.Vmax;\nstate.text = Math.round(state.speed * 100) + ' %';\nreturn {};"
+    },
+    {
+      "id": "probe",
+      "name": "Voltmètre",
+      "category": "Mesure",
+      "color": "#f1c40f",
+      "w": 100,
+      "description": "Affiche la tension du nœud connecté à IN (Z = flottant).",
+      "pins": [
+        {
+          "name": "IN",
+          "side": "left",
+          "type": "in"
+        }
+      ],
+      "props": {},
+      "interactive": "none",
+      "display": "value",
+      "shape3d": "probe",
+      "logic": "state.text = inp.IN == null ? 'Z' : inp.IN.toFixed(2) + ' V';\nreturn {};"
+    },
+    {
+      "id": "and",
+      "name": "Porte ET",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est haut si A et B sont hauts.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const h = x => (x || 0) >= props.seuil;\nreturn { Y: h(inp.A) && h(inp.B) ? props.V : 0 };"
+    },
+    {
+      "id": "or",
+      "name": "Porte OU",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est haut si A ou B est haut.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const h = x => (x || 0) >= props.seuil;\nreturn { Y: h(inp.A) || h(inp.B) ? props.V : 0 };"
+    },
+    {
+      "id": "xor",
+      "name": "Porte OU-X",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est haut si exactement une entrée est haute.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const h = x => (x || 0) >= props.seuil;\nreturn { Y: h(inp.A) !== h(inp.B) ? props.V : 0 };"
+    },
+    {
+      "id": "not",
+      "name": "Inverseur",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est l'inverse logique de A.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "return { Y: (inp.A || 0) >= props.seuil ? 0 : props.V };"
+    },
+    {
+      "id": "dff",
+      "name": "Bascule D",
+      "category": "Logique",
+      "color": "#1e8449",
+      "description": "Mémorise D sur front montant de CLK. Exemple de composant avec mémoire (state).",
+      "pins": [
+        {
+          "name": "D",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "CLK",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Q",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "nQ",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const clk = (inp.CLK || 0) >= props.seuil;\nif (clk && !state.prev) state.q = (inp.D || 0) >= props.seuil;\nstate.prev = clk;\nreturn { Q: state.q ? props.V : 0, nQ: state.q ? 0 : props.V };"
+    },
+    {
+      "id": "connector",
+      "name": "Connecteur",
+      "category": "Liaison",
+      "color": "#00e5ff",
+      "builtin": true,
+      "w": 40,
+      "h": 40,
+      "description": "Relie ce point à tous les connecteurs du même canal, sur n'importe quelle plaque du projet.",
+      "pins": [
+        {
+          "name": "P",
+          "side": "left",
+          "type": "link"
+        }
+      ],
+      "props": {
+        "canal": "A"
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "connector",
+      "logic": "return {};"
+    },
+    {
+      "id": "alu4",
+      "name": "UAL 4 bits",
+      "category": "Calculateur",
+      "color": "#33ff66",
+      "w": 160,
+      "description": "Unité arithmétique : calcule A op B sur 4 bits. OP1 OP0 = 00 addition, 01 soustraction, 10 multiplication, 11 division entière. Résultat sur R0..R7 (R0 = poids faible), NEG si le résultat est négatif, ERR en cas de division par zéro.",
+      "pins": [
+        {
+          "name": "A0",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "A1",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "A2",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "A3",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B0",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B1",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B2",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B3",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "OP0",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "OP1",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "R0",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "R1",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "R2",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "R3",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "R4",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "R5",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "R6",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "R7",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "NEG",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "ERR",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "value",
+      "shape3d": "chip",
+      "logic": "// Un bit vaut 1 si sa tension dépasse le seuil (un fil flottant vaut 0)\nconst bit = v => (v || 0) >= props.seuil ? 1 : 0;\nconst A = bit(inp.A0) + 2 * bit(inp.A1) + 4 * bit(inp.A2) + 8 * bit(inp.A3);\nconst B = bit(inp.B0) + 2 * bit(inp.B1) + 4 * bit(inp.B2) + 8 * bit(inp.B3);\nconst op = bit(inp.OP0) + 2 * bit(inp.OP1);   // 0 : +   1 : −   2 : ×   3 : ÷\n\nlet r = 0, neg = false, err = false;\nif (op === 0) r = A + B;\nelse if (op === 1) { r = A - B; if (r < 0) { neg = true; r = -r; } }\nelse if (op === 2) r = A * B;\nelse if (B === 0) err = true;\nelse r = Math.floor(A / B);\n\nconst sym = ['+', '−', '×', '÷'][op];\nstate.text = A + ' ' + sym + ' ' + B + ' = ' + (err ? 'ERR' : (neg ? '-' : '') + r + (op === 3 ? ' r' + (A % B) : ''));\n\n// Résultat en binaire sur 8 bits (valeur absolue)\nconst out = { NEG: neg ? props.V : 0, ERR: err ? props.V : 0 };\nfor (let i = 0; i < 8; i++) out['R' + i] = (r >> i) & 1 ? props.V : 0;\nreturn out;"
+    },
+    {
+      "id": "dec8",
+      "name": "Afficheur décimal",
+      "category": "Calculateur",
+      "color": "#ffcc33",
+      "w": 220,
+      "description": "Convertit un nombre binaire 8 bits (D0 = poids faible) en décimal, avec le signe (NEG) et l'erreur (ERR).",
+      "pins": [
+        {
+          "name": "D0",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D1",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D2",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D3",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D4",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D5",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D6",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D7",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "NEG",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "ERR",
+          "side": "left",
+          "type": "in"
+        }
+      ],
+      "props": {
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "value",
+      "shape3d": "probe",
+      "logic": "const bit = v => (v || 0) >= props.seuil ? 1 : 0;\nlet n = 0;\nfor (let i = 0; i < 8; i++) n += bit(inp['D' + i]) << i;\nstate.text = bit(inp.ERR) ? 'ERREUR' : (bit(inp.NEG) ? '-' : '') + n + ' (' + n.toString(2).padStart(8, '0') + ')';\nreturn {};"
+    },
+    {
+      "id": "opview",
+      "name": "Indicateur d'opération",
+      "category": "Calculateur",
+      "color": "#c77dff",
+      "w": 180,
+      "description": "Affiche l'opération choisie par les interrupteurs OP0 et OP1.",
+      "pins": [
+        {
+          "name": "OP0",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "OP1",
+          "side": "right",
+          "type": "in"
+        }
+      ],
+      "props": {
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "value",
+      "shape3d": "probe",
+      "logic": "const bit = v => (v || 0) >= props.seuil ? 1 : 0;\nstate.text = ['+ addition', '− soustraction', '× multiplication', '÷ division'][bit(inp.OP0) + 2 * bit(inp.OP1)];\nreturn {};"
+    }
+  ],
+  "schematics": [
+    {
+      "id": "sch_entrees",
+      "name": "Entrées",
+      "components": [
+        {
+          "id": "vcc",
+          "type": "vcc",
+          "x": 0,
+          "y": -60,
+          "rot": 0,
+          "label": "+5 V",
+          "props": {}
+        },
+        {
+          "id": "sw_A0",
+          "type": "switch",
+          "x": 100,
+          "y": 0,
+          "rot": 0,
+          "label": "A0 (1)",
+          "props": {}
+        },
+        {
+          "id": "c_A0",
+          "type": "connector",
+          "x": 240,
+          "y": 0,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "A0"
+          }
+        },
+        {
+          "id": "sw_A1",
+          "type": "switch",
+          "x": 100,
+          "y": 60,
+          "rot": 0,
+          "label": "A1 (2)",
+          "props": {}
+        },
+        {
+          "id": "c_A1",
+          "type": "connector",
+          "x": 240,
+          "y": 60,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "A1"
+          }
+        },
+        {
+          "id": "sw_A2",
+          "type": "switch",
+          "x": 100,
+          "y": 120,
+          "rot": 0,
+          "label": "A2 (4)",
+          "props": {}
+        },
+        {
+          "id": "c_A2",
+          "type": "connector",
+          "x": 240,
+          "y": 120,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "A2"
+          }
+        },
+        {
+          "id": "sw_A3",
+          "type": "switch",
+          "x": 100,
+          "y": 180,
+          "rot": 0,
+          "label": "A3 (8)",
+          "props": {}
+        },
+        {
+          "id": "c_A3",
+          "type": "connector",
+          "x": 240,
+          "y": 180,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "A3"
+          }
+        },
+        {
+          "id": "sw_B0",
+          "type": "switch",
+          "x": 100,
+          "y": 240,
+          "rot": 0,
+          "label": "B0 (1)",
+          "props": {}
+        },
+        {
+          "id": "c_B0",
+          "type": "connector",
+          "x": 240,
+          "y": 240,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "B0"
+          }
+        },
+        {
+          "id": "sw_B1",
+          "type": "switch",
+          "x": 100,
+          "y": 300,
+          "rot": 0,
+          "label": "B1 (2)",
+          "props": {}
+        },
+        {
+          "id": "c_B1",
+          "type": "connector",
+          "x": 240,
+          "y": 300,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "B1"
+          }
+        },
+        {
+          "id": "sw_B2",
+          "type": "switch",
+          "x": 100,
+          "y": 360,
+          "rot": 0,
+          "label": "B2 (4)",
+          "props": {}
+        },
+        {
+          "id": "c_B2",
+          "type": "connector",
+          "x": 240,
+          "y": 360,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "B2"
+          }
+        },
+        {
+          "id": "sw_B3",
+          "type": "switch",
+          "x": 100,
+          "y": 420,
+          "rot": 0,
+          "label": "B3 (8)",
+          "props": {}
+        },
+        {
+          "id": "c_B3",
+          "type": "connector",
+          "x": 240,
+          "y": 420,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "B3"
+          }
+        },
+        {
+          "id": "sw_OP0",
+          "type": "switch",
+          "x": 100,
+          "y": 480,
+          "rot": 0,
+          "label": "OP0",
+          "props": {}
+        },
+        {
+          "id": "c_OP0",
+          "type": "connector",
+          "x": 240,
+          "y": 480,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "OP0"
+          }
+        },
+        {
+          "id": "sw_OP1",
+          "type": "switch",
+          "x": 100,
+          "y": 540,
+          "rot": 0,
+          "label": "OP1",
+          "props": {}
+        },
+        {
+          "id": "c_OP1",
+          "type": "connector",
+          "x": 240,
+          "y": 540,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "OP1"
+          }
+        },
+        {
+          "id": "opv",
+          "type": "opview",
+          "x": 120,
+          "y": 640,
+          "rot": 0,
+          "label": "Opération",
+          "props": {}
+        },
+        {
+          "id": "cv_OP0",
+          "type": "connector",
+          "x": 40,
+          "y": 640,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "OP0"
+          }
+        },
+        {
+          "id": "cv_OP1",
+          "type": "connector",
+          "x": 340,
+          "y": 640,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "OP1"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_A0",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              20
+            ]
+          ]
+        },
+        {
+          "id": "w2",
+          "a": {
+            "c": "sw_A0",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_A0",
+            "p": "P"
+          },
+          "color": "#4da6ff"
+        },
+        {
+          "id": "w3",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_A1",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              80
+            ]
+          ]
+        },
+        {
+          "id": "w4",
+          "a": {
+            "c": "sw_A1",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_A1",
+            "p": "P"
+          },
+          "color": "#4da6ff"
+        },
+        {
+          "id": "w5",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_A2",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              140
+            ]
+          ]
+        },
+        {
+          "id": "w6",
+          "a": {
+            "c": "sw_A2",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_A2",
+            "p": "P"
+          },
+          "color": "#4da6ff"
+        },
+        {
+          "id": "w7",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_A3",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              200
+            ]
+          ]
+        },
+        {
+          "id": "w8",
+          "a": {
+            "c": "sw_A3",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_A3",
+            "p": "P"
+          },
+          "color": "#4da6ff"
+        },
+        {
+          "id": "w9",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_B0",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              260
+            ]
+          ]
+        },
+        {
+          "id": "w10",
+          "a": {
+            "c": "sw_B0",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_B0",
+            "p": "P"
+          },
+          "color": "#ffd84d"
+        },
+        {
+          "id": "w11",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_B1",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              320
+            ]
+          ]
+        },
+        {
+          "id": "w12",
+          "a": {
+            "c": "sw_B1",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_B1",
+            "p": "P"
+          },
+          "color": "#ffd84d"
+        },
+        {
+          "id": "w13",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_B2",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              380
+            ]
+          ]
+        },
+        {
+          "id": "w14",
+          "a": {
+            "c": "sw_B2",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_B2",
+            "p": "P"
+          },
+          "color": "#ffd84d"
+        },
+        {
+          "id": "w15",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_B3",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              440
+            ]
+          ]
+        },
+        {
+          "id": "w16",
+          "a": {
+            "c": "sw_B3",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_B3",
+            "p": "P"
+          },
+          "color": "#ffd84d"
+        },
+        {
+          "id": "w17",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_OP0",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              500
+            ]
+          ]
+        },
+        {
+          "id": "w18",
+          "a": {
+            "c": "sw_OP0",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_OP0",
+            "p": "P"
+          },
+          "color": "#c77dff"
+        },
+        {
+          "id": "w19",
+          "a": {
+            "c": "vcc",
+            "p": "VCC"
+          },
+          "b": {
+            "c": "sw_OP1",
+            "p": "A"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              30,
+              560
+            ]
+          ]
+        },
+        {
+          "id": "w20",
+          "a": {
+            "c": "sw_OP1",
+            "p": "B"
+          },
+          "b": {
+            "c": "c_OP1",
+            "p": "P"
+          },
+          "color": "#c77dff"
+        },
+        {
+          "id": "w21",
+          "a": {
+            "c": "cv_OP0",
+            "p": "P"
+          },
+          "b": {
+            "c": "opv",
+            "p": "OP0"
+          },
+          "color": "#c77dff"
+        },
+        {
+          "id": "w22",
+          "a": {
+            "c": "opv",
+            "p": "OP1"
+          },
+          "b": {
+            "c": "cv_OP1",
+            "p": "P"
+          },
+          "color": "#c77dff"
+        }
+      ]
+    },
+    {
+      "id": "sch_calcul",
+      "name": "Calcul",
+      "components": [
+        {
+          "id": "alu",
+          "type": "alu4",
+          "x": 400,
+          "y": 0,
+          "rot": 0,
+          "label": "UAL",
+          "props": {}
+        },
+        {
+          "id": "ci_A0",
+          "type": "connector",
+          "x": 40,
+          "y": 0,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "A0"
+          }
+        },
+        {
+          "id": "ci_A1",
+          "type": "connector",
+          "x": 40,
+          "y": 50,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "A1"
+          }
+        },
+        {
+          "id": "ci_A2",
+          "type": "connector",
+          "x": 40,
+          "y": 100,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "A2"
+          }
+        },
+        {
+          "id": "ci_A3",
+          "type": "connector",
+          "x": 40,
+          "y": 150,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "A3"
+          }
+        },
+        {
+          "id": "ci_B0",
+          "type": "connector",
+          "x": 40,
+          "y": 200,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "B0"
+          }
+        },
+        {
+          "id": "ci_B1",
+          "type": "connector",
+          "x": 40,
+          "y": 250,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "B1"
+          }
+        },
+        {
+          "id": "ci_B2",
+          "type": "connector",
+          "x": 40,
+          "y": 300,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "B2"
+          }
+        },
+        {
+          "id": "ci_B3",
+          "type": "connector",
+          "x": 40,
+          "y": 350,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "B3"
+          }
+        },
+        {
+          "id": "ci_OP0",
+          "type": "connector",
+          "x": 40,
+          "y": 400,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "OP0"
+          }
+        },
+        {
+          "id": "ci_OP1",
+          "type": "connector",
+          "x": 40,
+          "y": 450,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "OP1"
+          }
+        },
+        {
+          "id": "co_R0",
+          "type": "connector",
+          "x": 880,
+          "y": 0,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R0"
+          }
+        },
+        {
+          "id": "co_R1",
+          "type": "connector",
+          "x": 880,
+          "y": 50,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R1"
+          }
+        },
+        {
+          "id": "co_R2",
+          "type": "connector",
+          "x": 880,
+          "y": 100,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R2"
+          }
+        },
+        {
+          "id": "co_R3",
+          "type": "connector",
+          "x": 880,
+          "y": 150,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R3"
+          }
+        },
+        {
+          "id": "co_R4",
+          "type": "connector",
+          "x": 880,
+          "y": 200,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R4"
+          }
+        },
+        {
+          "id": "co_R5",
+          "type": "connector",
+          "x": 880,
+          "y": 250,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R5"
+          }
+        },
+        {
+          "id": "co_R6",
+          "type": "connector",
+          "x": 880,
+          "y": 300,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R6"
+          }
+        },
+        {
+          "id": "co_R7",
+          "type": "connector",
+          "x": 880,
+          "y": 350,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "R7"
+          }
+        },
+        {
+          "id": "co_NEG",
+          "type": "connector",
+          "x": 880,
+          "y": 400,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "NEG"
+          }
+        },
+        {
+          "id": "co_ERR",
+          "type": "connector",
+          "x": 880,
+          "y": 450,
+          "rot": 0,
+          "label": "",
+          "props": {
+            "canal": "ERR"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w23",
+          "a": {
+            "c": "ci_A0",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "A0"
+          },
+          "color": "#4da6ff",
+          "pts": [
+            [
+              120,
+              20
+            ],
+            [
+              120,
+              20
+            ]
+          ]
+        },
+        {
+          "id": "w24",
+          "a": {
+            "c": "ci_A1",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "A1"
+          },
+          "color": "#4da6ff",
+          "pts": [
+            [
+              140,
+              70
+            ],
+            [
+              140,
+              40
+            ]
+          ]
+        },
+        {
+          "id": "w25",
+          "a": {
+            "c": "ci_A2",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "A2"
+          },
+          "color": "#4da6ff",
+          "pts": [
+            [
+              160,
+              120
+            ],
+            [
+              160,
+              60
+            ]
+          ]
+        },
+        {
+          "id": "w26",
+          "a": {
+            "c": "ci_A3",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "A3"
+          },
+          "color": "#4da6ff",
+          "pts": [
+            [
+              180,
+              170
+            ],
+            [
+              180,
+              80
+            ]
+          ]
+        },
+        {
+          "id": "w27",
+          "a": {
+            "c": "ci_B0",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "B0"
+          },
+          "color": "#ffd84d",
+          "pts": [
+            [
+              200,
+              220
+            ],
+            [
+              200,
+              100
+            ]
+          ]
+        },
+        {
+          "id": "w28",
+          "a": {
+            "c": "ci_B1",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "B1"
+          },
+          "color": "#ffd84d",
+          "pts": [
+            [
+              220,
+              270
+            ],
+            [
+              220,
+              120
+            ]
+          ]
+        },
+        {
+          "id": "w29",
+          "a": {
+            "c": "ci_B2",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "B2"
+          },
+          "color": "#ffd84d",
+          "pts": [
+            [
+              240,
+              320
+            ],
+            [
+              240,
+              140
+            ]
+          ]
+        },
+        {
+          "id": "w30",
+          "a": {
+            "c": "ci_B3",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "B3"
+          },
+          "color": "#ffd84d",
+          "pts": [
+            [
+              260,
+              370
+            ],
+            [
+              260,
+              160
+            ]
+          ]
+        },
+        {
+          "id": "w31",
+          "a": {
+            "c": "ci_OP0",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "OP0"
+          },
+          "color": "#c77dff",
+          "pts": [
+            [
+              280,
+              420
+            ],
+            [
+              280,
+              180
+            ]
+          ]
+        },
+        {
+          "id": "w32",
+          "a": {
+            "c": "ci_OP1",
+            "p": "P"
+          },
+          "b": {
+            "c": "alu",
+            "p": "OP1"
+          },
+          "color": "#c77dff",
+          "pts": [
+            [
+              300,
+              470
+            ],
+            [
+              300,
+              200
+            ]
+          ]
+        },
+        {
+          "id": "w33",
+          "a": {
+            "c": "alu",
+            "p": "R0"
+          },
+          "b": {
+            "c": "co_R0",
+            "p": "P"
+          },
+          "pts": [
+            [
+              840,
+              20
+            ],
+            [
+              840,
+              20
+            ]
+          ]
+        },
+        {
+          "id": "w34",
+          "a": {
+            "c": "alu",
+            "p": "R1"
+          },
+          "b": {
+            "c": "co_R1",
+            "p": "P"
+          },
+          "pts": [
+            [
+              820,
+              40
+            ],
+            [
+              820,
+              70
+            ]
+          ]
+        },
+        {
+          "id": "w35",
+          "a": {
+            "c": "alu",
+            "p": "R2"
+          },
+          "b": {
+            "c": "co_R2",
+            "p": "P"
+          },
+          "pts": [
+            [
+              800,
+              60
+            ],
+            [
+              800,
+              120
+            ]
+          ]
+        },
+        {
+          "id": "w36",
+          "a": {
+            "c": "alu",
+            "p": "R3"
+          },
+          "b": {
+            "c": "co_R3",
+            "p": "P"
+          },
+          "pts": [
+            [
+              780,
+              80
+            ],
+            [
+              780,
+              170
+            ]
+          ]
+        },
+        {
+          "id": "w37",
+          "a": {
+            "c": "alu",
+            "p": "R4"
+          },
+          "b": {
+            "c": "co_R4",
+            "p": "P"
+          },
+          "pts": [
+            [
+              760,
+              100
+            ],
+            [
+              760,
+              220
+            ]
+          ]
+        },
+        {
+          "id": "w38",
+          "a": {
+            "c": "alu",
+            "p": "R5"
+          },
+          "b": {
+            "c": "co_R5",
+            "p": "P"
+          },
+          "pts": [
+            [
+              740,
+              120
+            ],
+            [
+              740,
+              270
+            ]
+          ]
+        },
+        {
+          "id": "w39",
+          "a": {
+            "c": "alu",
+            "p": "R6"
+          },
+          "b": {
+            "c": "co_R6",
+            "p": "P"
+          },
+          "pts": [
+            [
+              720,
+              140
+            ],
+            [
+              720,
+              320
+            ]
+          ]
+        },
+        {
+          "id": "w40",
+          "a": {
+            "c": "alu",
+            "p": "R7"
+          },
+          "b": {
+            "c": "co_R7",
+            "p": "P"
+          },
+          "pts": [
+            [
+              700,
+              160
+            ],
+            [
+              700,
+              370
+            ]
+          ]
+        },
+        {
+          "id": "w41",
+          "a": {
+            "c": "alu",
+            "p": "NEG"
+          },
+          "b": {
+            "c": "co_NEG",
+            "p": "P"
+          },
+          "color": "#ff9f40",
+          "pts": [
+            [
+              680,
+              180
+            ],
+            [
+              680,
+              420
+            ]
+          ]
+        },
+        {
+          "id": "w42",
+          "a": {
+            "c": "alu",
+            "p": "ERR"
+          },
+          "b": {
+            "c": "co_ERR",
+            "p": "P"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              660,
+              200
+            ],
+            [
+              660,
+              470
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sch_affichage",
+      "name": "Affichage",
+      "components": [
+        {
+          "id": "gnd",
+          "type": "gnd",
+          "x": 230,
+          "y": 620,
+          "rot": 0,
+          "label": "",
+          "props": {}
+        },
+        {
+          "id": "dec",
+          "type": "dec8",
+          "x": 700,
+          "y": 0,
+          "rot": 0,
+          "label": "Résultat",
+          "props": {}
+        },
+        {
+          "id": "cl_R0",
+          "type": "connector",
+          "x": 40,
+          "y": 0,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R0"
+          }
+        },
+        {
+          "id": "led_R0",
+          "type": "led",
+          "x": 140,
+          "y": 0,
+          "rot": 0,
+          "label": "R0 (1)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R0",
+          "type": "connector",
+          "x": 340,
+          "y": 0,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R0"
+          }
+        },
+        {
+          "id": "cl_R1",
+          "type": "connector",
+          "x": 40,
+          "y": 60,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R1"
+          }
+        },
+        {
+          "id": "led_R1",
+          "type": "led",
+          "x": 140,
+          "y": 60,
+          "rot": 0,
+          "label": "R1 (2)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R1",
+          "type": "connector",
+          "x": 340,
+          "y": 50,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R1"
+          }
+        },
+        {
+          "id": "cl_R2",
+          "type": "connector",
+          "x": 40,
+          "y": 120,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R2"
+          }
+        },
+        {
+          "id": "led_R2",
+          "type": "led",
+          "x": 140,
+          "y": 120,
+          "rot": 0,
+          "label": "R2 (4)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R2",
+          "type": "connector",
+          "x": 340,
+          "y": 100,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R2"
+          }
+        },
+        {
+          "id": "cl_R3",
+          "type": "connector",
+          "x": 40,
+          "y": 180,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R3"
+          }
+        },
+        {
+          "id": "led_R3",
+          "type": "led",
+          "x": 140,
+          "y": 180,
+          "rot": 0,
+          "label": "R3 (8)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R3",
+          "type": "connector",
+          "x": 340,
+          "y": 150,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R3"
+          }
+        },
+        {
+          "id": "cl_R4",
+          "type": "connector",
+          "x": 40,
+          "y": 240,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R4"
+          }
+        },
+        {
+          "id": "led_R4",
+          "type": "led",
+          "x": 140,
+          "y": 240,
+          "rot": 0,
+          "label": "R4 (16)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R4",
+          "type": "connector",
+          "x": 340,
+          "y": 200,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R4"
+          }
+        },
+        {
+          "id": "cl_R5",
+          "type": "connector",
+          "x": 40,
+          "y": 300,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R5"
+          }
+        },
+        {
+          "id": "led_R5",
+          "type": "led",
+          "x": 140,
+          "y": 300,
+          "rot": 0,
+          "label": "R5 (32)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R5",
+          "type": "connector",
+          "x": 340,
+          "y": 250,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R5"
+          }
+        },
+        {
+          "id": "cl_R6",
+          "type": "connector",
+          "x": 40,
+          "y": 360,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R6"
+          }
+        },
+        {
+          "id": "led_R6",
+          "type": "led",
+          "x": 140,
+          "y": 360,
+          "rot": 0,
+          "label": "R6 (64)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R6",
+          "type": "connector",
+          "x": 340,
+          "y": 300,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R6"
+          }
+        },
+        {
+          "id": "cl_R7",
+          "type": "connector",
+          "x": 40,
+          "y": 420,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R7"
+          }
+        },
+        {
+          "id": "led_R7",
+          "type": "led",
+          "x": 140,
+          "y": 420,
+          "rot": 0,
+          "label": "R7 (128)",
+          "props": {
+            "couleur": "#33ff66"
+          }
+        },
+        {
+          "id": "cd_R7",
+          "type": "connector",
+          "x": 340,
+          "y": 350,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "R7"
+          }
+        },
+        {
+          "id": "cl_NEG",
+          "type": "connector",
+          "x": 40,
+          "y": 480,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "NEG"
+          }
+        },
+        {
+          "id": "led_NEG",
+          "type": "led",
+          "x": 140,
+          "y": 480,
+          "rot": 0,
+          "label": "NÉGATIF",
+          "props": {
+            "couleur": "#ff9f40"
+          }
+        },
+        {
+          "id": "cd_NEG",
+          "type": "connector",
+          "x": 340,
+          "y": 400,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "NEG"
+          }
+        },
+        {
+          "id": "cl_ERR",
+          "type": "connector",
+          "x": 40,
+          "y": 540,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "ERR"
+          }
+        },
+        {
+          "id": "led_ERR",
+          "type": "led",
+          "x": 140,
+          "y": 540,
+          "rot": 0,
+          "label": "ERREUR",
+          "props": {
+            "couleur": "#ff3b3b"
+          }
+        },
+        {
+          "id": "cd_ERR",
+          "type": "connector",
+          "x": 340,
+          "y": 450,
+          "rot": 180,
+          "label": "",
+          "props": {
+            "canal": "ERR"
+          }
+        }
+      ],
+      "wires": [
+        {
+          "id": "w43",
+          "a": {
+            "c": "cl_R0",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R0",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w44",
+          "a": {
+            "c": "led_R0",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              20
+            ]
+          ]
+        },
+        {
+          "id": "w45",
+          "a": {
+            "c": "cd_R0",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D0"
+          },
+          "pts": [
+            [
+              420,
+              20
+            ],
+            [
+              420,
+              20
+            ]
+          ]
+        },
+        {
+          "id": "w46",
+          "a": {
+            "c": "cl_R1",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R1",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w47",
+          "a": {
+            "c": "led_R1",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              80
+            ]
+          ]
+        },
+        {
+          "id": "w48",
+          "a": {
+            "c": "cd_R1",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D1"
+          },
+          "pts": [
+            [
+              440,
+              70
+            ],
+            [
+              440,
+              40
+            ]
+          ]
+        },
+        {
+          "id": "w49",
+          "a": {
+            "c": "cl_R2",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R2",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w50",
+          "a": {
+            "c": "led_R2",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              140
+            ]
+          ]
+        },
+        {
+          "id": "w51",
+          "a": {
+            "c": "cd_R2",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D2"
+          },
+          "pts": [
+            [
+              460,
+              120
+            ],
+            [
+              460,
+              60
+            ]
+          ]
+        },
+        {
+          "id": "w52",
+          "a": {
+            "c": "cl_R3",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R3",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w53",
+          "a": {
+            "c": "led_R3",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              200
+            ]
+          ]
+        },
+        {
+          "id": "w54",
+          "a": {
+            "c": "cd_R3",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D3"
+          },
+          "pts": [
+            [
+              480,
+              170
+            ],
+            [
+              480,
+              80
+            ]
+          ]
+        },
+        {
+          "id": "w55",
+          "a": {
+            "c": "cl_R4",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R4",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w56",
+          "a": {
+            "c": "led_R4",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              260
+            ]
+          ]
+        },
+        {
+          "id": "w57",
+          "a": {
+            "c": "cd_R4",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D4"
+          },
+          "pts": [
+            [
+              500,
+              220
+            ],
+            [
+              500,
+              100
+            ]
+          ]
+        },
+        {
+          "id": "w58",
+          "a": {
+            "c": "cl_R5",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R5",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w59",
+          "a": {
+            "c": "led_R5",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              320
+            ]
+          ]
+        },
+        {
+          "id": "w60",
+          "a": {
+            "c": "cd_R5",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D5"
+          },
+          "pts": [
+            [
+              520,
+              270
+            ],
+            [
+              520,
+              120
+            ]
+          ]
+        },
+        {
+          "id": "w61",
+          "a": {
+            "c": "cl_R6",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R6",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w62",
+          "a": {
+            "c": "led_R6",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              380
+            ]
+          ]
+        },
+        {
+          "id": "w63",
+          "a": {
+            "c": "cd_R6",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D6"
+          },
+          "pts": [
+            [
+              540,
+              320
+            ],
+            [
+              540,
+              140
+            ]
+          ]
+        },
+        {
+          "id": "w64",
+          "a": {
+            "c": "cl_R7",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_R7",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w65",
+          "a": {
+            "c": "led_R7",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              440
+            ]
+          ]
+        },
+        {
+          "id": "w66",
+          "a": {
+            "c": "cd_R7",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "D7"
+          },
+          "pts": [
+            [
+              560,
+              370
+            ],
+            [
+              560,
+              160
+            ]
+          ]
+        },
+        {
+          "id": "w67",
+          "a": {
+            "c": "cl_NEG",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_NEG",
+            "p": "A"
+          },
+          "color": "#ff9f40"
+        },
+        {
+          "id": "w68",
+          "a": {
+            "c": "led_NEG",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              500
+            ]
+          ]
+        },
+        {
+          "id": "w69",
+          "a": {
+            "c": "cd_NEG",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "NEG"
+          },
+          "color": "#ff9f40",
+          "pts": [
+            [
+              580,
+              420
+            ],
+            [
+              580,
+              180
+            ]
+          ]
+        },
+        {
+          "id": "w70",
+          "a": {
+            "c": "cl_ERR",
+            "p": "P"
+          },
+          "b": {
+            "c": "led_ERR",
+            "p": "A"
+          },
+          "color": "#ff4d4d"
+        },
+        {
+          "id": "w71",
+          "a": {
+            "c": "led_ERR",
+            "p": "K"
+          },
+          "b": {
+            "c": "gnd",
+            "p": "GND"
+          },
+          "color": "#9e9e9e",
+          "pts": [
+            [
+              260,
+              560
+            ]
+          ]
+        },
+        {
+          "id": "w72",
+          "a": {
+            "c": "cd_ERR",
+            "p": "P"
+          },
+          "b": {
+            "c": "dec",
+            "p": "ERR"
+          },
+          "color": "#ff4d4d",
+          "pts": [
+            [
+              600,
+              470
+            ],
+            [
+              600,
+              200
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}
