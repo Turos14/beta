@@ -40,8 +40,10 @@
       <!-- SCHÉMA -->
       <section class="view active" id="view-schema">
         <div class="toolbar">
-          <span class="hint">glisser un composant · cliquer pin → pin pour câbler · molette = zoom · glisser le fond = déplacer</span>
+          <span class="hint">câbler : clic sur un pôle · clics sur le fond = points de passage · clic sur un pôle ou double-clic = fin · Échap = annuler</span>
           <span class="spacer"></span>
+          <label>fil <select id="newWireColor" title="couleur des nouveaux fils"></select></label>
+          <button id="btnEndWire" title="terminer le fil en cours sur le dernier point (extrémité libre) — Entrée">terminer le fil</button>
           <button id="btnRotate">pivoter</button>
           <button id="btnDelete">supprimer</button>
           <button id="btnFit">recentrer</button>

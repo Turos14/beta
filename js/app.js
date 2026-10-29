@@ -110,9 +110,7 @@
     if (sel && sel.kind === 'wire') {
       const w = b.wires.find(x => x.id === sel.id);
       if (w) {
-        const name = (e) => { const c = App.findComp(b, e.c); return (c && (c.label || (App.getDef(c.type) || {}).name)) + '.' + e.p; };
-        box.innerHTML = '<h3>Fil</h3><p>' + esc(name(w.a)) + '<br>→ ' + esc(name(w.b)) + '</p><button id="insDelWire" class="danger">supprimer le fil</button>';
-        $('insDelWire').onclick = deleteSelection;
+        inspectWire(box, b, w);
         return;
       }
     }
@@ -156,6 +154,40 @@
     });
     $('insRot').onclick = rotateSelection;
     $('insDel').onclick = deleteSelection;
+  }
+
+  function inspectWire(box, b, w) {
+    const name = (e) => {
+      if (!App.isPinEnd(e)) return 'point libre (' + e.x + ', ' + e.y + ')';
+      const c = App.findComp(b, e.c);
+      return (c && (c.label || (App.getDef(c.type) || {}).name)) + '.' + e.p;
+    };
+    const n = (w.pts || []).length;
+    box.innerHTML = '<h3>Fil</h3><p>' + esc(name(w.a)) + '<br>→ ' + esc(name(w.b)) + '</p>' +
+      '<div class="field"><label>couleur</label><div class="row">' +
+        '<input type="color" id="insWireColor" value="' + esc(w.color || '#1fae45') + '">' +
+        '<button id="insWireColorReset">défaut</button></div>' +
+        '<div class="swatches">' + App.WIRE_COLORS.filter(c => c[0]).map(c =>
+          '<button class="sw" data-color="' + c[0] + '" title="' + c[1] + '" style="background:' + c[0] + '"></button>').join('') + '</div></div>' +
+      '<div class="field"><label>tracé : ' + (n ? n + ' point(s) de passage' : 'automatique') + '</label><div class="row">' +
+        '<button id="insViaAdd">+ point de passage</button>' +
+        (n ? '<button id="insViaClear">tracé auto</button>' : '') + '</div></div>' +
+      '<p class="muted">glisser les points ronds pour choisir par où passe le fil · double-clic sur le fil = ajouter un point · double-clic sur un point = le retirer' +
+      (App.isPinEnd(w.a) && App.isPinEnd(w.b) ? '' : ' · glisser un carré (extrémité libre) sur un pôle pour le brancher') + '</p>' +
+      '<button id="insDelWire" class="danger">supprimer le fil</button>';
+    const setColor = (c) => { if (c) w.color = c; else delete w.color; App.changed('wire'); renderInspector(); };
+    $('insWireColor').oninput = (e) => { w.color = e.target.value; App.changed('wire'); };
+    $('insWireColorReset').onclick = () => setColor('');
+    box.querySelectorAll('[data-color]').forEach(btn => { btn.onclick = () => setColor(btn.dataset.color); });
+    $('insViaAdd').onclick = () => {
+      // au milieu du tracé actuel
+      const pts = App.wirePath(b, w);
+      const mid = pts[Math.floor(pts.length / 2)], prev = pts[Math.floor(pts.length / 2) - 1] || mid;
+      App.addViaPoint(b, w, [App.snap((mid[0] + prev[0]) / 2), App.snap((mid[1] + prev[1]) / 2)]);
+      renderInspector();
+    };
+    if ($('insViaClear')) $('insViaClear').onclick = () => { delete w.pts; App.changed('wire'); renderInspector(); };
+    $('insDelWire').onclick = deleteSelection;
   }
 
   function deleteSelection() {
@@ -271,6 +303,12 @@
   // ---- Barres d'outils ----
   document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => App.showTab(b.dataset.tab));
   $('btnRotate').onclick = rotateSelection;
+  $('btnEndWire').onclick = () => App.schemaView.endWireHere();
+  $('newWireColor').innerHTML = App.WIRE_COLORS.map(c => '<option value="' + c[0] + '">' + c[1] + '</option>').join('');
+  $('newWireColor').onchange = (e) => {
+    App.state.wireColor = e.target.value;
+    e.target.style.color = e.target.value || '';
+  };
   $('btnDelete').onclick = deleteSelection;
   $('btnFit').onclick = () => App.schemaView.fit();
   $('btnSimToggle').onclick = $('btnSimToggle3d').onclick = () => App.Sim.toggle();
@@ -280,6 +318,7 @@
     if (tab !== 'schema' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelection(); }
     else if (e.key === 'r' || e.key === 'R') rotateSelection();
+    else if (e.key === 'Enter') App.schemaView.endWireHere();
     else if (e.key === 'Escape') {
       if (!App.schemaView.cancelWire()) { App.state.selection = null; App.emit('select'); }
     }

@@ -98,7 +98,8 @@
     this.svg = svg;
     this.mode = mode;
     this.views = {};      // boardId -> { x, y, scale }
-    this.pending = null;  // pôle de départ d'un fil
+    this.pending = null;  // départ du fil en cours : pôle { c, p } ou point { x, y }
+    this.via = [];        // points de passage du fil en cours
     this.ghost = null;
     this.motorAngle = {};
     this.bind();
@@ -149,20 +150,36 @@
 
     const sel = App.state.selection;
     const wires = el('g', {}, svg);
+    const freeEnds = {};   // "x,y" -> nombre d'extrémités libres (jonctions)
+    let selWire = null;
     b.wires.forEach(w => {
       const pts = App.wirePath(b, w);
       if (!pts) return;
       const d = 'M' + pts.map(p => p.join(',')).join(' L');
-      let cls = 'wire';
+      let cls = 'wire' + (w.color ? ' colored' : '');
       let title = '';
       if (sim) {
-        const v = Sim.valueAt(b.id, w.a.c, w.a.p);
+        const v = Sim.wireValue(b.id, w.id);
         cls += v === null ? ' float' : v > 0.5 ? ' on' : ' off';
-        title = fmtV(v) + (Sim.conflicts[Sim.netOf(b.id, w.a.c, w.a.p)] ? ' — conflit' : '');
-      } else if (sel && sel.kind === 'wire' && sel.id === w.id) cls += ' selected';
-      el('path', { d, class: cls }, wires);
+        title = fmtV(v) + (Sim.wireConflict(b.id, w.id) ? ' — conflit' : '');
+      } else if (sel && sel.kind === 'wire' && sel.id === w.id) { cls += ' selected'; selWire = w; }
+      const attrs = { d, class: cls };
+      if (w.color) attrs.style = 'stroke:' + w.color;
+      el('path', attrs, wires);
       const hit = el('path', { d, class: 'wire-hit', 'data-wire': w.id }, wires);
       if (title) el('title', {}, hit).textContent = title;
+      ['a', 'b'].forEach(k => {
+        if (App.isPinEnd(w[k])) return;
+        const key = w[k].x + ',' + w[k].y;
+        freeEnds[key] = (freeEnds[key] || 0) + 1;
+      });
+    });
+    // Extrémités libres (carré) et jonctions (point plein)
+    Object.keys(freeEnds).forEach(key => {
+      const [x, y] = key.split(',').map(Number);
+      if (freeEnds[key] > 1) el('circle', { cx: x, cy: y, r: 3.5, class: 'junction' }, wires);
+      const m = el('rect', { x: x - 3, y: y - 3, width: 6, height: 6, class: 'wire-end', 'data-pt': key }, wires);
+      el('title', {}, m).textContent = sim ? '' : 'extrémité libre : cliquer pour partir d\'ici';
     });
 
     const comps = el('g', {}, svg);
@@ -193,6 +210,21 @@
       }
     });
 
+    // Poignées du fil sélectionné : points de passage (ronds) et extrémités libres (carrés)
+    if (selWire) {
+      const handles = el('g', {}, svg);
+      (selWire.pts || []).forEach((p, i) => {
+        const h = el('circle', { cx: p[0], cy: p[1], r: 4.5, class: 'via-handle', 'data-via': selWire.id + '|' + i }, handles);
+        el('title', {}, h).textContent = 'point de passage : glisser pour déplacer, double-clic pour retirer';
+      });
+      ['a', 'b'].forEach(k => {
+        const e = selWire[k];
+        if (App.isPinEnd(e)) return;
+        const h = el('rect', { x: e.x - 5, y: e.y - 5, width: 10, height: 10, class: 'end-handle', 'data-end': selWire.id + '|' + k }, handles);
+        el('title', {}, h).textContent = 'extrémité libre : glisser (sur un pôle pour la brancher)';
+      });
+    }
+
     this.ghostLayer = el('g', {}, svg);
     if (this.ghost) this.drawGhost(this.ghost);
     this.applyView();
@@ -202,11 +234,46 @@
     this.ghost = pt;
     if (!this.ghostLayer || !this.pending) return;
     this.ghostLayer.innerHTML = '';
-    const b = App.board(), c = App.findComp(b, this.pending.c);
-    const A = c && App.pinWorld(c, this.pending.p);
+    const A = App.endPos(App.board(), this.pending);
     if (!A) return;
-    const pts = App.routePoints(A, { x: pt.x, y: pt.y });
-    el('path', { d: 'M' + pts.map(p => p.join(',')).join(' L'), class: 'wire ghost' }, this.ghostLayer);
+    const pts = App.routePoints(A, { x: App.snap(pt.x), y: App.snap(pt.y), dir: null }, this.via);
+    const attrs = { d: 'M' + pts.map(p => p.join(',')).join(' L'), class: 'wire ghost' };
+    if (App.state.wireColor) attrs.style = 'stroke:' + App.state.wireColor;
+    el('path', attrs, this.ghostLayer);
+    this.via.forEach(p => el('circle', { cx: p[0], cy: p[1], r: 3, class: 'via-ghost' }, this.ghostLayer));
+  };
+
+  // ---- Câblage ----
+  SchematicView.prototype.startWire = function (end) {
+    this.pending = end;
+    this.via = [];
+    this.render();
+  };
+
+  // Termine le fil en cours sur un pôle ou un point libre
+  SchematicView.prototype.finishWire = function (end) {
+    if (!this.pending) return null;
+    const extra = { pts: this.via, color: App.state.wireColor };
+    const w = App.addWire(App.board(), this.pending, end, extra);
+    this.pending = null; this.via = []; this.ghost = null;
+    if (w) { App.state.selection = { kind: 'wire', id: w.id }; App.emit('select'); }
+    this.render();
+    return w;
+  };
+
+  // Termine le fil sur son dernier point de passage, laissé en extrémité libre
+  SchematicView.prototype.endWireHere = function () {
+    if (!this.pending) return false;
+    if (!this.via.length) { App.toast('cliquer sur le schéma pour poser au moins un point, puis terminer', true); return false; }
+    const last = this.via.pop();
+    return !!this.finishWire({ x: last[0], y: last[1] });
+  };
+
+  SchematicView.prototype.addVia = function (pt) {
+    const p = [App.snap(pt.x), App.snap(pt.y)];
+    const last = this.via[this.via.length - 1];
+    if (!last || last[0] !== p[0] || last[1] !== p[1]) this.via.push(p);
+    this.drawGhost(pt);
   };
 
   // Valeur 0..1 d'un curseur selon la position du pointeur
@@ -222,6 +289,8 @@
     const svg = this.svg, self = this;
     const pointers = new Map();
     let act = null;
+    let lastDown = null;   // pour détecter le double-clic (le SVG est re-dessiné entre deux clics,
+                           // le navigateur n'émet donc pas d'événement dblclick fiable)
 
     svg.addEventListener('wheel', (e) => {
       e.preventDefault();
@@ -236,27 +305,51 @@
         act = { kind: 'pinch', dist: Math.hypot(p1.x - p2.x, p1.y - p2.y) };
         return;
       }
+      const now = performance.now();
+      const isDouble = lastDown && now - lastDown.t < 400 && Math.hypot(e.clientX - lastDown.x, e.clientY - lastDown.y) < 6;
+      lastDown = isDouble ? null : { t: now, x: e.clientX, y: e.clientY };
+      if (isDouble && self.mode === 'edit' && self.handleDouble(e)) { act = null; return; }
+
       const b = App.board();
       const pt = self.toWorld(e.clientX, e.clientY);
       const pinEl = e.target.closest('[data-pin]');
       const wireEl = e.target.closest('[data-wire]');
       const compEl = e.target.closest('[data-comp]');
+      const viaEl = e.target.closest('[data-via]');
+      const endEl = e.target.closest('[data-end]');
+      const ptEl = e.target.closest('[data-pt]');
+      const edit = self.mode === 'edit';
 
-      if (self.mode === 'edit' && pinEl) {
-        const [c, p] = pinEl.getAttribute('data-pin').split('|');
-        if (!self.pending) {
-          self.pending = { c, p };
-          self.render();
+      // Poignées du fil sélectionné
+      if (edit && !self.pending && (viaEl || endEl)) {
+        const [wid, key] = (viaEl || endEl).getAttribute(viaEl ? 'data-via' : 'data-end').split('|');
+        const wire = b.wires.find(w => w.id === wid);
+        if (wire) act = { kind: 'handle', wire, via: viaEl ? +key : null, end: endEl ? key : null, moved: false };
+        return;
+      }
+      // Pôle ou extrémité libre : début ou fin de fil
+      if (edit && (pinEl || ptEl || (self.pending && endEl))) {
+        let end;
+        if (pinEl) {
+          const [c, p] = pinEl.getAttribute('data-pin').split('|');
+          end = { c, p };
+        } else if (ptEl) {
+          const [x, y] = ptEl.getAttribute('data-pt').split(',').map(Number);
+          end = { x, y };
         } else {
-          App.addWire(b, self.pending, { c, p });
-          self.pending = null; self.ghost = null;
-          self.render();
+          const [wid, k] = endEl.getAttribute('data-end').split('|');
+          const w = b.wires.find(x => x.id === wid);
+          end = { x: w[k].x, y: w[k].y };
         }
+        if (!self.pending) self.startWire(end); else self.finishWire(end);
         act = null;
         return;
       }
-      if (self.mode === 'edit' && self.pending && !pinEl) {
-        self.pending = null; self.ghost = null; self.render();
+      // Fil en cours : un clic pose un point de passage, un glisser déplace la vue
+      if (edit && self.pending) {
+        const v = self.view();
+        act = { kind: 'pan', cx: e.clientX, cy: e.clientY, vx: v.x, vy: v.y, moved: false, via: pt };
+        return;
       }
       if (compEl) {
         const comp = App.findComp(b, compEl.getAttribute('data-comp'));
@@ -311,6 +404,13 @@
         v.y = act.vy - (e.clientY - act.cy) / v.scale;
         if (Math.abs(e.clientX - act.cx) + Math.abs(e.clientY - act.cy) > 3) act.moved = true;
         self.applyView();
+      } else if (act.kind === 'handle') {
+        const pt = self.toWorld(e.clientX, e.clientY);
+        const p = [App.snap(pt.x), App.snap(pt.y)];
+        if (act.via !== null) act.wire.pts[act.via] = p;
+        else act.wire[act.end] = { x: p[0], y: p[1] };
+        act.moved = true;
+        self.render();
       } else if (act.kind === 'slider') {
         App.Sim.interact(App.board().id, act.comp.id, 'set', sliderValue(act.comp, act.def, self.toWorld(e.clientX, e.clientY)));
       }
@@ -320,8 +420,18 @@
       pointers.delete(e.pointerId);
       if (!act) return;
       if (act.kind === 'drag' && act.moved) App.changed('move');
+      if (act.kind === 'handle' && act.moved) {
+        // Une extrémité libre lâchée sur un pôle s'y branche
+        if (act.end) {
+          const e2 = act.wire[act.end];
+          const pin = App.pinNear(App.board(), e2, 8);
+          if (pin) act.wire[act.end] = pin;
+        }
+        App.changed('wire');
+      }
+      if (act.kind === 'pan' && act.via && !act.moved && self.pending) self.addVia(act.via);
       if (act.kind === 'button') App.Sim.interact(App.board().id, act.comp.id, 'up');
-      if (act.kind === 'pan' && !act.moved && self.mode === 'edit' && App.state.selection) {
+      if (act.kind === 'pan' && !act.moved && self.mode === 'edit' && !self.pending && App.state.selection) {
         App.state.selection = null;
         App.emit('select');
         self.render();
@@ -339,6 +449,39 @@
       const type = e.dataTransfer.getData('text/plain');
       self.addAt(type, self.toWorld(e.clientX, e.clientY));
     });
+  };
+
+  // Double-clic : terminer un fil sur un point libre, ajouter / retirer un point de passage.
+  // Retourne true si le geste a été utilisé.
+  SchematicView.prototype.handleDouble = function (e) {
+    const b = App.board();
+    const pt = this.toWorld(e.clientX, e.clientY);
+    const p = [App.snap(pt.x), App.snap(pt.y)];
+    const target = document.elementFromPoint(e.clientX, e.clientY) || e.target;
+    if (this.pending) {
+      if (target.closest('[data-pin]') || target.closest('[data-pt]')) return false;
+      while (this.via.length && this.via[this.via.length - 1][0] === p[0] && this.via[this.via.length - 1][1] === p[1]) this.via.pop();
+      this.finishWire({ x: p[0], y: p[1] });
+      return true;
+    }
+    const viaEl = target.closest('[data-via]');
+    if (viaEl) {
+      const [wid, i] = viaEl.getAttribute('data-via').split('|');
+      const w = b.wires.find(x => x.id === wid);
+      w.pts.splice(+i, 1);
+      if (!w.pts.length) delete w.pts;
+      App.changed('wire');
+      return true;
+    }
+    const wireEl = target.closest('[data-wire]');
+    if (wireEl) {
+      const w = b.wires.find(x => x.id === wireEl.getAttribute('data-wire'));
+      App.addViaPoint(b, w, p);
+      App.state.selection = { kind: 'wire', id: w.id };
+      App.emit('select');
+      return true;
+    }
+    return false;
   };
 
   SchematicView.prototype.addAt = function (type, pt) {
@@ -366,7 +509,14 @@
 
   SchematicView.prototype.cancelWire = function () {
     if (!this.pending) return false;
-    this.pending = null; this.ghost = null; this.render();
+    this.pending = null; this.via = []; this.ghost = null; this.render();
     return true;
+  };
+
+  // Insère un point de passage sur un fil existant, à l'endroit le plus logique
+  App.addViaPoint = function (board, wire, p) {
+    wire.pts = wire.pts || [];
+    wire.pts.splice(App.bestViaIndex(board, wire, p), 0, p);
+    App.changed('wire');
   };
 })();
