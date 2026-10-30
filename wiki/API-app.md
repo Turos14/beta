@@ -94,7 +94,7 @@ Toute case `<input type="checkbox" data-pref="…">` est reliée à `App.prefs` 
 | `Suppr`, `Retour arrière` | `deleteSelection()` |
 | `R` | `rotateSelection()` |
 | `Entrée` | termine le fil en cours sur le dernier point (`schemaView.endWireHere()`) |
-| `Échap` | annule le fil en cours, sinon désélectionne |
+| `Échap` | annule le fil en cours, sinon désélectionne (ce qui réaffiche tout) ; dans les autres onglets, réaffiche tous les canaux |
 
 ## Barre d'outils du schéma
 
@@ -109,7 +109,8 @@ Toute case `<input type="checkbox" data-pref="…">` est reliée à `App.prefs` 
 | Événement | Réaction |
 |---|---|
 | `change` | Liste des plaques ; palette si `library` / `project` ; re-rendu de la vue active ; inspecteur / panneau si `comp`, `wire`, `board` ou `project`. |
-| `select` | Re-rendu du schéma et de l'inspecteur. |
+| `select` | Isole le canal si la sélection est un connecteur, sinon réaffiche tout (`App.setFocusCanal`) ; re-rendu du schéma et de l'inspecteur. |
+| `focus` | Re-rendu de la vue 2D active ; message « canal isolé » quand un canal est isolé. |
 | `project` | Nom du projet, palette, oubli des cadrages (`views = {}`), rechargement du JSON. |
 | `sim` | Si l'onglet Simulateur est ouvert : re-rendu du schéma **seulement si** `Sim.changed` ou `simView.animated` (grands circuits), puis `updateSimPanel()`. |
 | `simstate` | Boutons ▶/■, panneau, re-rendu du simulateur. |

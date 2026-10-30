@@ -59,6 +59,9 @@ Identifiant du nœud du pôle (utile pour comparer deux pôles ou lire `conflict
 ### `Sim.wireValue(boardId, wireId) → number | null`
 Tension du nœud d'un fil (`null` = flottant). Sert à colorer les fils en 2D et en 3D.
 
+### `Sim.canalNet(canal) → netId | null`
+Nœud d'un canal de connecteur (celui de son premier connecteur ; tous sont dans le même nœud). Sert à repérer les fils et composants reliés au canal isolé.
+
 ### `Sim.wireConflict(boardId, wireId) → boolean`
 Vrai si le nœud du fil est en conflit.
 

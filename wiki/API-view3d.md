@@ -25,7 +25,8 @@ Vue 3D avec Three.js r128 + OrbitControls. Objet public : **`App.View3D`** (alia
 | `visible` | Onglet affiché (la boucle ne dessine rien sinon). |
 | `needsFrame` | Une nouvelle image est à dessiner (rendu à la demande). |
 | `pressed` | Bouton 3D actuellement maintenu. |
-| `cables` | Groupe des câbles entre plaques ; sa visibilité suit `App.prefs.cables3d` sans reconstruire la scène. |
+| `cables` | Groupe des câbles entre plaques ; chaque tube porte `userData.canal`. Leur visibilité est réglée par `applyCables()` sans reconstruire la scène. |
+| `downAt` | Position d'un clic gauche commencé dans le vide (pour réafficher tous les câbles au relâchement). |
 | `fogDist` | Distance caméra–scène du dernier recadrage, base du brouillard. |
 
 ## Fonctions publiques
@@ -65,6 +66,9 @@ Reporte l'état de la simulation sur la scène :
 | pistes | tension du fil (`Sim.wireValue`) | lueur proportionnelle à la tension (au moins 15 % dès que le nœud est piloté, même à 0 V ; éteinte s'il est flottant), seulement pendant la simulation |
 | câbles | tension du canal | lueur de 0,15 à 0,95 |
 
+### `V3.applyCables()`
+Câble visible si un canal est isolé et que c'est le sien, sinon selon `App.prefs.cables3d`. Les câbles du canal isolé sont allumés à fond par `updateDynamic`.
+
 ### `V3.applyFog()`
 Brouillard de `1,2 × fogDist` à `3 × fogDist` si `App.prefs.fog3d`, sinon repoussé à l'infini (1e9) : on ne retire pas le brouillard de la scène, ce qui évite de recompiler les matériaux.
 
@@ -98,7 +102,7 @@ Boucle `requestAnimationFrame` permanente. Si la vue est visible : met à jour O
 Lance un rayon depuis le pointeur sur les composants interactifs (`dyn.hits`) et remonte jusqu'au groupe qui porte `userData.comp`.
 
 ### `onDown(e)` / `onUp()`
-Clic gauche sur un composant interactif : désactive OrbitControls (pour ne pas tourner la vue), puis `switch` → bascule, `slider` → +25 %, `button` → appuyé. Au relâchement (n'importe où) : relâche le bouton et réactive OrbitControls.
+Clic gauche sur un composant interactif ou un **connecteur** (`dyn.hits`) : désactive OrbitControls (pour ne pas tourner la vue), puis connecteur → isole son canal (ou réaffiche tout), `switch` → bascule, `slider` → +25 %, `button` → appuyé. Au relâchement (n'importe où) : relâche le bouton et réactive OrbitControls ; un clic dans le vide sans déplacement (< 4 px) réaffiche tous les câbles.
 
 ## Abonnements
 
@@ -107,6 +111,7 @@ Clic gauche sur un composant interactif : désactive OrbitControls (pour ne pas 
 | `change` | `dirty = true` ; reconstruction immédiate (sans recadrage) si l'onglet est visible. |
 | `project` | `dirty = true` ; reconstruction recadrée si l'onglet est visible. |
 | `sim`, `simstate` | `needsFrame = true`. |
-| `prefs` | `cables3d` : affiche / masque le groupe `cables` ; `fog3d` : `applyFog()`. |
+| `prefs` | `cables3d` : `applyCables()` ; `fog3d` : `applyFog()`. |
+| `focus` | `applyCables()`. |
 
 Les câbles prennent la couleur `App.channelColor(canal)`, comme les liaisons en 2D.

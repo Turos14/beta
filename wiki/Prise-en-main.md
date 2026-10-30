@@ -71,6 +71,19 @@ Case **liaisons** dans la barre d'outils du schéma ou du simulateur (les deux s
 - dans le simulateur, les pointillés sont vifs et épais quand le canal est sous tension,
   estompés sinon.
 
+### Isoler un canal (clic sur un connecteur)
+
+Cliquer sur un **connecteur** n'affiche plus que son canal :
+
+| Vue | Effet |
+|---|---|
+| Schéma | sélectionner le connecteur suffit ; les fils de son nœud électrique sont épaissis, les autres fils et les composants qui n'y sont pas reliés sont estompés ; ses liaisons s'affichent même si la case **liaisons** est décochée |
+| Simulateur | même rendu ; un 2ᵉ clic sur un connecteur du même canal réaffiche tout |
+| Vue 3D | seuls les câbles de ce canal restent visibles (et s'allument), même si **câbles entre plaques** est décoché |
+
+Un clic dans le vide ou `Échap` réaffiche tout. Le canal isolé est le même dans les trois
+vues : isoler `PWR` dans le schéma puis ouvrir la 3D ne montre que les câbles `PWR`.
+
 ## Onglet Schéma
 
 | Action | Souris / tactile | Clavier |

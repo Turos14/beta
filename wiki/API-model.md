@@ -30,6 +30,12 @@ Options propres au navigateur (pas au projet), relues au chargement depuis `loca
 ### `App.setPref(key, value)`
 Change une option, l'enregistre (erreurs de stockage ignorées) et émet `prefs` avec le nom de l'option.
 
+### `App.setFocusCanal(canal)`
+Isole un canal de connecteur (`null` pour tout réafficher). Sans effet si c'est déjà le canal isolé ; sinon met à jour `App.state.focusCanal` et émet `focus`. `App.setProject` remet le canal isolé à `null`.
+
+### `App.connCanal(comp) → string`
+Canal d'une instance de connecteur (`props.canal` effectif, en texte).
+
 ### `App.channelColor(canal) → string`
 Couleur `hsl(…)` stable d'un canal de connecteur, dérivée d'un hachage de son nom : la même en 2D (liaisons) et en 3D (câbles), et la même d'une session à l'autre.
 

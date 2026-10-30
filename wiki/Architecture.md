@@ -55,6 +55,7 @@ les fonctions internes restent privées, seules les propriétés ajoutées à `A
 | `App.state.boardId` | Id de la plaque (schéma) affichée. |
 | `App.state.selection` | `null`, `{ kind: 'comp', id }` ou `{ kind: 'wire', id }` dans l'éditeur. |
 | `App.state.wireColor` | Couleur appliquée aux nouveaux fils (`''` = couleur du thème). |
+| `App.state.focusCanal` | Canal de connecteur isolé (`null` = tout afficher). |
 | `App.prefs` | Options d'affichage mémorisées par navigateur : `showLinks`, `cables3d`, `fog3d`. |
 | `App.Sim.*` | État de la simulation (temps, contrôles, mémoire, nœuds, tensions). |
 
@@ -69,6 +70,7 @@ les fonctions internes restent privées, seules les propriétés ajoutées à `A
 | `select` | éditeur de schéma, inspecteur | — | app.js (re-dessine le schéma et l'inspecteur) |
 | `sim` | `Sim` à chaque pas, réinitialisation ou interaction | — | app.js (vue simulateur + panneau), view3d.js (demande une image) |
 | `simstate` | `Sim.start` / `Sim.stop` | — | app.js (boutons ▶/■, panneau), view3d.js |
+| `focus` | `App.setFocusCanal` | canal ou `null` | app.js (re-rendu 2D, message), view3d.js (câbles visibles) |
 | `prefs` | `App.setPref` | nom de l'option | app.js (cases à cocher, re-rendu 2D), view3d.js (câbles, brouillard) |
 
 ### Raisons de `change`
