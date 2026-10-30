@@ -26,6 +26,8 @@ Vue 3D avec Three.js r128 + OrbitControls. Objet public : **`App.View3D`** (alia
 | `needsFrame` | Une nouvelle image est à dessiner (rendu à la demande). |
 | `pressed` | Bouton 3D actuellement maintenu. |
 | `cables` | Groupe des câbles entre plaques ; chaque tube porte `userData.canal`. Leur visibilité est réglée par `applyCables()` sans reconstruire la scène. |
+| `localCables` | Groupe des arcs du canal isolé entre connecteurs d'une même plaque (`null` sans canal isolé). |
+| `connPosOf` | Fonction position 3D d'un connecteur `{ board, comp }` de la scène courante, mémorisée par `build`. |
 | `downAt` | Position d'un clic gauche commencé dans le vide (pour réafficher tous les câbles au relâchement). |
 | `fogDist` | Distance caméra–scène du dernier recadrage, base du brouillard. |
 
@@ -67,7 +69,7 @@ Reporte l'état de la simulation sur la scène :
 | câbles | tension du canal | lueur de 0,15 à 0,95 |
 
 ### `V3.applyCables()`
-Câble visible si un canal est isolé et que c'est le sien, sinon selon `App.prefs.cables3d`. Les câbles du canal isolé sont allumés à fond par `updateDynamic`.
+Câble visible si un canal est isolé et que c'est le sien, sinon selon `App.prefs.cables3d`. Les câbles du canal isolé sont allumés à fond par `updateDynamic`. Appelle ensuite `buildLocalCables`.
 
 ### `V3.applyFog()`
 Brouillard de `1,2 × fogDist` à `3 × fogDist` si `App.prefs.fog3d`, sinon repoussé à l'infini (1e9) : on ne retire pas le brouillard de la scène, ce qui évite de recompiler les matériaux.
@@ -79,6 +81,9 @@ Brouillard de `1,2 × fogDist` à `3 × fogDist` si `App.prefs.fog3d`, sinon rep
 Suspend le rendu (la boucle tourne mais ne dessine rien).
 
 ## Fonctions privées
+
+### `buildLocalCables(focus)`
+Supprime (et libère) les arcs précédents, puis, si un canal est isolé, relie ses connecteurs **d'une même plaque** par des arcs lumineux de la couleur du canal : sur chaque plaque, chaque connecteur est relié au plus proche de ceux déjà reliés (arbre couvrant minimal, comme les liaisons 2D). Hauteur de l'arc proportionnelle à la distance (0,4 à 1,5). Construits à la demande : aucun coût tant qu'aucun canal n'est isolé.
 
 ### `canvasTexture(w, h, draw) → CanvasTexture`
 Crée un canvas `w × h`, appelle `draw(ctx, w, h)` et en fait une texture (anisotropie 4).

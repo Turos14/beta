@@ -79,7 +79,7 @@ Cliquer sur un **connecteur** n'affiche plus que son canal :
 |---|---|
 | Schéma | sélectionner le connecteur suffit ; les fils de son nœud électrique sont épaissis, les autres fils et les composants qui n'y sont pas reliés sont estompés ; ses liaisons s'affichent même si la case **liaisons** est décochée |
 | Simulateur | même rendu ; un 2ᵉ clic sur un connecteur du même canal réaffiche tout |
-| Vue 3D | seuls les câbles de ce canal restent visibles (et s'allument), même si **câbles entre plaques** est décoché |
+| Vue 3D | seuls les câbles de ce canal restent visibles (et s'allument), même si **câbles entre plaques** est décoché ; ses connecteurs d'une **même plaque** sont aussi reliés par des arcs lumineux |
 
 Un clic dans le vide ou `Échap` réaffiche tout. Le canal isolé est le même dans les trois
 vues : isoler `PWR` dans le schéma puis ouvrir la 3D ne montre que les câbles `PWR`.
