@@ -9,7 +9,9 @@ Vue 3D avec Three.js r128 + OrbitControls. Objet public : **`App.View3D`** (alia
 | `S` | `1/20` | Échelle : 20 px de schéma = 1 unité 3D. |
 | `BOARD_T` | `0.12` | Épaisseur d'une plaque. |
 | `STACK_GAP` | `3.2` | Écart vertical entre plaques empilées. |
+| `HAS_THREE` | boolean | Three.js est chargé ; sinon les ressources partagées valent `null` et `init()` affiche un message. |
 | `GOLD` | matériau | Matériau doré partagé (pastilles, bornes, axes), jamais libéré. |
+| `PAD_GEO` | géométrie | Pastille partagée par tous les pôles et extrémités libres, jamais libérée. |
 
 ## Variables internes
 
@@ -44,7 +46,9 @@ Adapte le renderer et le ratio de la caméra à la taille du conteneur.
 5. **Câbles inter-plaques** : pour chaque canal, un connecteur représentant par plaque, chaînés dans l'ordre des plaques. Tube coloré (une teinte par canal) le long d'une courbe Catmull-Rom :
    - empilées : sortie par le bord latéral des plaques, pour rester visible ;
    - côte à côte : arche au-dessus des plaques.
-6. Si `refit` : centre OrbitControls sur la scène et place la caméra en vue plongeante.
+6. Si `refit` : centre OrbitControls sur la scène, place la caméra en vue plongeante et adapte le **brouillard** (de 1,2 à 3 fois la distance de la caméra) et la profondeur de vue à la taille de la scène, pour que les grands projets ne disparaissent pas dans le brouillard.
+
+Les étiquettes fixes de même texte et même couleur partagent une seule texture (`cachedLabel`) : un projet de 1 000 composants se construit en moins d'une demi-seconde.
 
 ### `V3.updateDynamic()`
 Reporte l'état de la simulation sur la scène :
@@ -72,6 +76,9 @@ Crée un canvas `w × h`, appelle `draw(ctx, w, h)` et en fait une texture (anis
 
 ### `makeLabel(text, color, height) → Sprite`
 Sprite d'étiquette (canvas 256×64, fond semi-transparent, police monospace). Le sprite expose `sprite.setText(t)`, qui ne redessine que si le texte change.
+
+### `cachedLabel(cache, text, color, height) → Sprite`
+Étiquette fixe : réutilise le matériau (donc la texture) déjà créé pour le même texte et la même couleur pendant ce `build`. Les étiquettes de valeurs, qui changent, utilisent `makeLabel`.
 
 ### `mat(color, extra) → MeshStandardMaterial`
 Matériau standard (rugosité 0,6, métal 0,1) avec options supplémentaires.

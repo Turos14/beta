@@ -42,6 +42,7 @@ const view = new App.SchematicView(svgElement, 'edit' | 'sim');
 | `via` | Points de passage `[[x, y], …]` posés pendant le câblage en cours. |
 | `ghost` | Dernière position du pointeur pour le fil « fantôme ». |
 | `motorAngle` | Angles des moteurs (animation 2D). |
+| `animated` | Vrai si un moteur tourne sur la plaque affichée : la vue doit être redessinée à chaque image même si `Sim.changed` est faux. |
 | `ghostLayer` | Calque SVG du fil fantôme. |
 
 ### `view.view() → { x, y, scale, fitted }`

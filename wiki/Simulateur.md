@@ -34,8 +34,8 @@ et `evaluate()` reconstruit au besoin.
 ## 2. Un pas de simulation — `Sim.evaluate()`
 
 ```
-sorties ← {}                                 (aucune source au départ)
-répéter au plus 40 fois :
+sorties ← sorties du pas précédent           (aucune source au tout premier pas)
+répéter au plus 200 fois :
     tensions ← résoudre(sorties)              (une tension par nœud)
     pour chaque composant :
         inp   ← tension du nœud de chacun de ses pôles (null si aucun)
@@ -56,9 +56,25 @@ mémoriser : tensions, conflits, états (du dernier passage), erreurs
 
 ### Convergence
 
+Chaque itération propage les signaux d'**une porte** de plus : un circuit qui enchaîne N
+portes en série demande environ N itérations pour se stabiliser (42 pour le
+[calculateur en portes](Exemple-calculateur-en-portes-logiques)).
+
+Deux mécanismes rendent cela rapide :
+
+- **démarrage à chaud** : chaque pas repart des sorties du pas précédent
+  (`Sim.lastOutputs`). Si rien n'a changé, une seule itération suffit ; après un clic sur
+  un interrupteur, seules les itérations nécessaires à la propagation sont faites. Les
+  sorties mémorisées sont oubliées à chaque reconstruction des nœuds et à la réinitialisation ;
+- **nœuds précalculés** : chaque composant connaît d'avance le nœud de chacun de ses pôles
+  (`item.nets`).
+
 L'itération s'arrête dès que plus aucune sortie ne change. Un circuit qui oscille (par
 exemple un inverseur rebouclé sur lui-même) n'est jamais stable : on s'arrête alors au
-bout de 40 itérations et le dernier résultat est utilisé.
+bout de 200 itérations et le dernier résultat est utilisé.
+
+`Sim.changed` indique si le pas a modifié une sortie, un état (`state`) ou un contrôle :
+la vue du simulateur n'est redessinée que dans ce cas (ou si un moteur tourne).
 
 ### Mémoire (`state`)
 

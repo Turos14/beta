@@ -78,6 +78,11 @@ Recompose le nombre à partir de `D0`–`D7` (`n += bit << i`) et affiche `-` si
 
 Affiche `+ addition`, `− soustraction`, `× multiplication` ou `÷ division` selon `OP0` / `OP1`.
 
+## Version en portes logiques
+
+Le même calculateur existe construit **uniquement avec les composants de base** (portes ET,
+OU, OU-X, inverseurs) : [Exemple : calculateur en portes logiques](Exemple-calculateur-en-portes-logiques).
+
 ## Idées d'extension
 
 - Passer en 8 bits : ajouter `A4`–`A7` / `B4`–`B7` à l'UAL et 8 sorties de plus.

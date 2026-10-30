@@ -15,6 +15,7 @@ sous forme de plaques reliées entre elles.
 - [Composants de base](Composants-de-base) — tous les composants fournis et leur code
 - [Programmer un composant](Programmer-un-composant) — API `inp / props / state / ui / t`, exemples
 - [Exemple : calculateur binaire](Exemple-calculateur-binaire) — projet prêt à importer : + − × ÷ sur 4 bits, 3 plaques
+- [Exemple : calculateur en portes logiques](Exemple-calculateur-en-portes-logiques) — le même avec seulement les composants de base : 261 portes sur 9 plaques
 
 ### Technique
 - [Architecture](Architecture) — fichiers, ordre de chargement, événements, flux de données

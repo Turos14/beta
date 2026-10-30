@@ -16,8 +16,10 @@ Simulateur. Objet public : **`App.Sim`**. Le fonctionnement général est décri
 | `netVal` | `{ [netId]: number }` | Tension des nœuds pilotés (un nœud absent est flottant). |
 | `conflicts` | `{ [netId]: true }` | Nœuds pilotés par des tensions différentes. |
 | `errors` | `{ [compKey]: string }` | Dernière erreur d'exécution par instance. |
-| `items` | array | Instances simulées : `{ key, board, comp, def, props, fn }`. |
+| `items` | array | Instances simulées : `{ key, board, comp, def, props, fn, nets }` ; `nets[i]` = nœud du i-ème pôle. |
 | `dirty` | boolean | Nœuds à reconstruire avant le prochain calcul. |
+| `lastOutputs` | object \| null | Sorties du dernier état stable : point de départ du pas suivant (démarrage à chaud). Remis à `null` par `rebuild` et `reset`. |
+| `changed` | boolean | Le dernier `evaluate` ou `interact` a modifié une sortie, un `state` ou un contrôle : la vue doit être redessinée. |
 
 **Clés** : `compKey = "<boardId>/<compId>"`, `pinKey = "<boardId>/<compId>/<pôle>"`,
 extrémité libre : `"pt:<boardId>:<x>,<y>"` (privée, utilisée seulement pour l'union-find).
@@ -26,7 +28,7 @@ extrémité libre : `"pt:<boardId>:<x>,<y>"` (privée, utilisée seulement pour 
 
 | Nom | Description |
 |---|---|
-| `MAX_ITER = 40` | Nombre maximal d'itérations pour stabiliser un pas. |
+| `MAX_ITER = 200` | Nombre maximal d'itérations pour stabiliser un pas (≈ nombre de portes en série). |
 | `compiled` | Cache `defId → { code, fn }` des programmes compilés. |
 
 ---
@@ -43,10 +45,10 @@ Compile `def.logic` avec `new Function('inp', 'props', 'state', 'ui', 't', code)
 État du contrôle de l'instance `key`, créé à `{ on: false, pressed: false, value: 0.5 }` au premier accès.
 
 ### `Sim.rebuild()`
-Reconstruit `items`, `pinNet` et `wireNet` pour tout le projet (union-find sur les extrémités des fils, les jonctions d'extrémités libres et les canaux des connecteurs), puis remet `dirty` à `false`. Détails : [Simulateur §1](Simulateur#1-construction-des-nœuds--simrebuild).
+Reconstruit `items` (avec `nets` précalculés), `pinNet` et `wireNet` pour tout le projet, oublie `lastOutputs` (union-find sur les extrémités des fils, les jonctions d'extrémités libres et les canaux des connecteurs), puis remet `dirty` à `false`. Détails : [Simulateur §1](Simulateur#1-construction-des-nœuds--simrebuild).
 
 ### `Sim.evaluate()`
-Calcule un état stable au temps `t` : reconstruit si `dirty`, itère jusqu'à stabilité (40 itérations au plus) puis met à jour `netVal`, `conflicts`, `states` et `errors`. N'émet pas d'événement. Détails : [Simulateur §2](Simulateur#2-un-pas-de-simulation--simevaluate).
+Calcule un état stable au temps `t` : reconstruit si `dirty`, part de `lastOutputs`, itère jusqu'à stabilité (200 itérations au plus) puis met à jour `lastOutputs`, `netVal`, `conflicts`, `states`, `errors` et `changed`. N'émet pas d'événement. Détails : [Simulateur §2](Simulateur#2-un-pas-de-simulation--simevaluate).
 
 ### `Sim.valueAt(boardId, compId, pin) → number | null`
 Tension du nœud relié à ce pôle, `null` s'il est flottant.
@@ -85,7 +87,7 @@ Applique une action utilisateur selon `def.interactive` :
 | `slider` | `'set'` | `ui.value = value` borné à [0, 1] |
 | `slider` | `'click'` | `ui.value` avance de 0,25 et revient à 0 après 1 |
 
-Si la boucle est arrêtée, refait un `evaluate()`. Émet `sim`.
+Si la boucle est arrêtée, refait un `evaluate()`. Met `changed` à `true`, émet `sim`.
 
 ### `Sim.testLogic(def, inp, props, ui, t, state) → { out, state }`
 Exécute **une fois** le programme d'une définition, hors circuit (zone « tester » de l'éditeur). Vide le cache de compilation de `def`, fusionne `def.props` et `props`, complète `ui` avec les valeurs par défaut et travaille sur une copie de `state`. Les exceptions **ne sont pas** interceptées : l'appelant les affiche.

@@ -107,7 +107,7 @@ Clic : `schemaView.addAt(type)` au centre. Glisser : le type passe dans `dataTra
 | `change` | Liste des plaques ; palette si `library` / `project` ; re-rendu de la vue active ; inspecteur / panneau si `comp`, `wire`, `board` ou `project`. |
 | `select` | Re-rendu du schéma et de l'inspecteur. |
 | `project` | Nom du projet, palette, oubli des cadrages (`views = {}`), rechargement du JSON. |
-| `sim` | Si l'onglet Simulateur est ouvert : re-rendu du schéma et `updateSimPanel()`. |
+| `sim` | Si l'onglet Simulateur est ouvert : re-rendu du schéma **seulement si** `Sim.changed` ou `simView.animated` (grands circuits), puis `updateSimPanel()`. |
 | `simstate` | Boutons ▶/■, panneau, re-rendu du simulateur. |
 | `resize` (fenêtre) | `applyView()` de la vue de schéma active. |
 

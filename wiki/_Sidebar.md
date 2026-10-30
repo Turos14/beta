@@ -5,6 +5,7 @@
 - [Composants de base](Composants-de-base)
 - [Programmer un composant](Programmer-un-composant)
 - [Exemple : calculateur binaire](Exemple-calculateur-binaire)
+- [Exemple : calculateur en portes](Exemple-calculateur-en-portes-logiques)
 
 **Technique**
 - [Architecture](Architecture)

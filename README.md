@@ -42,6 +42,7 @@ Le projet est aussi sauvegardé automatiquement dans le navigateur.
 | Fichier | Contenu |
 |---|---|
 | [`examples/calculateur-binaire.json`](examples/calculateur-binaire.json) | Calculateur binaire 4 bits (+ − × ÷) sur 3 plaques ; voir le [wiki](https://github.com/Turos14/beta/wiki/Exemple-calculateur-binaire). |
+| [`examples/calculateur-binaire-portes.json`](examples/calculateur-binaire-portes.json) | Le même, avec seulement les composants de base : 261 portes logiques sur 9 plaques ; voir le [wiki](https://github.com/Turos14/beta/wiki/Exemple-calculateur-en-portes-logiques). |
 
 À ouvrir avec le bouton `importer`.
 
