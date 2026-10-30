@@ -15,7 +15,16 @@
   const listeners = {};
 
   App.GRID = GRID;
-  App.state = { boardId: null, selection: null, wireColor: '' };
+  App.state = { boardId: null, selection: null, wireColor: '', focusCanal: null };
+
+  // Canal de connecteur isolé : seuls ses fils et câbles restent affichés (null = tout)
+  App.setFocusCanal = function (canal) {
+    canal = canal == null ? null : String(canal);
+    if (canal === App.state.focusCanal) return;
+    App.state.focusCanal = canal;
+    App.emit('focus', canal);
+  };
+  App.connCanal = (comp) => String(App.compProps(comp, App.getDef('connector')).canal);
 
   // Couleurs proposées pour les fils ('' = couleur du thème)
   App.WIRE_COLORS = [
@@ -270,6 +279,7 @@
 
   App.setProject = function (p, keepBoard) {
     App.project = App.normalizeProject(p);
+    App.state.focusCanal = null;
     if (!keepBoard || !App.project.schematics.some(s => s.id === App.state.boardId)) {
       App.state.boardId = App.project.schematics[0].id;
     }

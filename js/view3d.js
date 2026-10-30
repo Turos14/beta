@@ -330,7 +330,7 @@
         if (parts.cap) dyn.caps.push({ key, obj: parts.cap });
         if (parts.knob) dyn.knobs.push({ key, obj: parts.knob });
         if (parts.rotor) dyn.rotors.push({ key, obj: parts.rotor });
-        if (def.interactive !== 'none') dyn.hits.push(grp);
+        if (def.interactive !== 'none' || def.id === 'connector') dyn.hits.push(grp);
 
         // Pastilles des pôles
         def.pins.forEach(p => {
@@ -357,7 +357,6 @@
 
     // Câbles entre plaques (connecteurs de même canal)
     cables = new THREE.Group();
-    cables.visible = App.prefs.cables3d;
     root.add(cables);
     const chans = App.channels();
     const boardIndex = {};
@@ -391,8 +390,9 @@
         const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
         const cm = mat(color, { emissive: color, emissiveIntensity: 0.15 });
         const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.08, 8, false), cm);
+        tube.userData.canal = ch;
         cables.add(tube);
-        dyn.cables.push({ mat: cm, board: reps[k].board.id, c: reps[k].comp.id, p: 'P' });
+        dyn.cables.push({ mat: cm, board: reps[k].board.id, c: reps[k].comp.id, p: 'P', canal: ch });
       }
     });
 
@@ -410,9 +410,18 @@
       camera.updateProjectionMatrix();
       controls.update();
     }
+    V3.applyCables();
     dirty = false;
     needsFrame = true;
     V3.updateDynamic();
+  };
+
+  // Câbles visibles : ceux du canal isolé, sinon tous ou aucun selon l'option « câbles entre plaques »
+  V3.applyCables = function () {
+    if (!cables) return;
+    const focus = App.state.focusCanal;
+    cables.children.forEach(t => { t.visible = focus != null ? t.userData.canal === focus : App.prefs.cables3d; });
+    needsFrame = true;
   };
 
   // Brouillard (assombrissement des objets éloignés) : activable dans la barre d'outils.
@@ -444,7 +453,10 @@
       return v === null ? 0 : Math.min(1, Math.max(0.15, v / 5));
     };
     dyn.traces.forEach(t => { t.mat.emissiveIntensity = Sim.running ? level(t) * 0.9 : 0; });
-    dyn.cables.forEach(c => { c.mat.emissiveIntensity = Sim.running ? 0.15 + level(c) * 0.8 : 0.15; });
+    const focus = App.state.focusCanal;
+    dyn.cables.forEach(c => {
+      c.mat.emissiveIntensity = focus != null && c.canal === focus ? 1 : Sim.running ? 0.15 + level(c) * 0.8 : 0.15;
+    });
   };
 
   function loop() {
@@ -472,18 +484,26 @@
     while (o && !(o.userData && o.userData.comp)) o = o.parent;
     return o ? o.userData : null;
   }
+  let downAt = null;   // position d'un clic dans le vide (pour réafficher tous les câbles)
   function onDown(e) {
     if (e.button !== 0) return;
     const u = pick(e);
+    downAt = u ? null : { x: e.clientX, y: e.clientY };
     if (!u) return;
     controls.enabled = false;
     const Sim = App.Sim;
+    if (u.def.id === 'connector') {
+      const canal = App.connCanal(App.findComp(App.project.schematics.find(s => s.id === u.board), u.comp));
+      App.setFocusCanal(App.state.focusCanal === canal ? null : canal);
+    }
     if (u.def.interactive === 'switch') Sim.interact(u.board, u.comp, 'click');
     else if (u.def.interactive === 'slider') Sim.interact(u.board, u.comp, 'click');
     else if (u.def.interactive === 'button') { Sim.interact(u.board, u.comp, 'down'); pressed = u; }
     needsFrame = true;
   }
-  function onUp() {
+  function onUp(e) {
+    if (downAt && e && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 4 && visible) App.setFocusCanal(null);
+    downAt = null;
     if (pressed) { App.Sim.interact(pressed.board, pressed.comp, 'up'); pressed = null; }
     if (controls) controls.enabled = true;
     needsFrame = true;
@@ -503,8 +523,9 @@
   App.on('change', () => { dirty = true; if (visible) V3.build(false); });
   App.on('project', () => { dirty = true; if (visible) V3.build(true); });
   App.on('sim', () => { needsFrame = true; });
+  App.on('focus', () => V3.applyCables());
   App.on('prefs', (key) => {
-    if (key === 'cables3d' && cables) { cables.visible = App.prefs.cables3d; needsFrame = true; }
+    if (key === 'cables3d') V3.applyCables();
     if (key === 'fog3d') V3.applyFog();
   });
   App.on('simstate', () => { needsFrame = true; });

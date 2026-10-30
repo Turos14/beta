@@ -150,6 +150,9 @@
     el('rect', { x: -5000, y: -5000, width: 10000, height: 10000, fill: 'url(#grid-' + this.mode + ')', 'data-bg': 1 }, svg);
 
     const sel = App.state.selection;
+    // Canal isolé : on met en avant son nœud et on estompe tout le reste
+    const focus = App.state.focusCanal;
+    const focusNet = focus != null ? Sim.canalNet(focus) : null;
     const wires = el('g', {}, svg);
     const freeEnds = {};   // "x,y" -> nombre d'extrémités libres (jonctions)
     let selWire = null;
@@ -164,6 +167,7 @@
         cls += v === null ? ' float' : v > 0.5 ? ' on' : ' off';
         title = fmtV(v) + (Sim.wireConflict(b.id, w.id) ? ' — conflit' : '');
       } else if (sel && sel.kind === 'wire' && sel.id === w.id) { cls += ' selected'; selWire = w; }
+      if (focus != null) cls += Sim.wireNet[b.id + '/' + w.id] === focusNet ? ' focus' : ' dim';
       const attrs = { d, class: cls };
       if (w.color) attrs.style = 'stroke:' + w.color;
       el('path', attrs, wires);
@@ -185,10 +189,11 @@
 
     // Liaisons entre connecteurs de même canal (option « liaisons ») : traits sous les
     // composants, étiquettes des plaques distantes au-dessus (cliquables)
-    const linkLines = App.prefs.showLinks ? el('g', {}, svg) : null;
+    const showLinks = App.prefs.showLinks || focus != null;
+    const linkLines = showLinks ? el('g', {}, svg) : null;
     const comps = el('g', {}, svg);
-    const linkTags = App.prefs.showLinks ? el('g', {}, svg) : null;
-    if (linkLines) drawLinks(linkLines, linkTags, b, sim);
+    const linkTags = showLinks ? el('g', {}, svg) : null;
+    if (linkLines) drawLinks(linkLines, linkTags, b, sim, focus);
     this.animated = false;
     b.components.forEach(c => {
       const def = App.getDef(c.type);
@@ -203,7 +208,7 @@
         this.motorAngle[key] = (this.motorAngle[key] || 0) + (st.speed || 0) * 0.3;
         if (st.speed) this.animated = true;
       }
-      App.drawComponent(comps, c, def, {
+      const g = App.drawComponent(comps, c, def, {
         mode: this.mode,
         selected: !sim && sel && sel.kind === 'comp' && sel.id === c.id,
         pending: this.pending,
@@ -212,6 +217,7 @@
         angle: this.motorAngle[key],
         pinValue: sim ? (p) => Sim.valueAt(b.id, c.id, p) : null
       });
+      if (focus != null && !def.pins.some(p => Sim.netOf(b.id, c.id, p.name) === focusNet)) g.classList.add('dim');
       if (sim && Sim.errors[key]) {
         const t = el('text', { x: c.x, y: c.y - 16, class: 'net-val', fill: '#ff5555' }, comps);
         t.textContent = '⚠ ' + Sim.errors[key];
@@ -286,7 +292,7 @@
 
   // Relie en pointillés les connecteurs de même canal de la plaque (chacun au plus proche
   // déjà relié : arbre couvrant minimal) et indique sous chacun les autres plaques du canal.
-  function drawLinks(lines, tags, b, sim) {
+  function drawLinks(lines, tags, b, sim, focus) {
     const Sim = App.Sim, boards = App.project.schematics;
     const def = App.getDef('connector');
     if (!def) return;
@@ -300,6 +306,7 @@
       (local[canal] = local[canal] || []).push(c);
     });
     Object.keys(local).forEach(canal => {
+      if (focus != null && canal !== focus) return;
       const list = local[canal], color = App.channelColor(canal);
       let cls = 'link-line';
       if (sim) {
@@ -432,6 +439,10 @@
         } else {
           const def = App.getDef(comp.type);
           if (!def) return;
+          if (def.id === 'connector') {
+            const canal = App.connCanal(comp);
+            App.setFocusCanal(App.state.focusCanal === canal ? null : canal);
+          }
           if (def.interactive === 'switch') App.Sim.interact(b.id, comp.id, 'click');
           else if (def.interactive === 'button') { App.Sim.interact(b.id, comp.id, 'down'); act = { kind: 'button', comp }; }
           else if (def.interactive === 'slider') {
@@ -501,6 +512,7 @@
       }
       if (act.kind === 'pan' && act.via && !act.moved && self.pending) self.addVia(act.via);
       if (act.kind === 'button') App.Sim.interact(App.board().id, act.comp.id, 'up');
+      if (act.kind === 'pan' && !act.moved && self.mode === 'sim') App.setFocusCanal(null);
       if (act.kind === 'pan' && !act.moved && self.mode === 'edit' && !self.pending && App.state.selection) {
         App.state.selection = null;
         App.emit('select');

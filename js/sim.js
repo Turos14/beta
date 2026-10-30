@@ -171,6 +171,11 @@
     const v = Sim.netVal[Sim.wireNet[boardId + '/' + wireId]];
     return v === undefined ? null : v;
   };
+  // Nœud d'un canal de connecteur (tous ses connecteurs sont dans le même nœud)
+  Sim.canalNet = function (canal) {
+    const e = (App.channels()[canal] || [])[0];
+    return e ? Sim.netOf(e.board.id, e.comp.id, 'P') : null;
+  };
   Sim.wireConflict = (boardId, wireId) => !!Sim.conflicts[Sim.wireNet[boardId + '/' + wireId]];
   Sim.stateOf = (boardId, compId) => Sim.states[compKey(boardId, compId)] || {};
 

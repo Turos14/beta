@@ -172,6 +172,9 @@ table.pins input, table.pins select { width: 100%; }
 .link-line.off, .link-line.float { opacity: .3; }
 .link-line.on { stroke-width: 2.5; opacity: 1; }
 .link-tag { font: 9px var(--font); cursor: pointer; }
+/* Canal isolé (clic sur un connecteur) */
+.schema-svg .wire.dim, .schema-svg .comp.dim { opacity: .12; }
+.schema-svg .wire.focus { stroke-width: 3.5; opacity: 1; }
 .link-tag:hover { text-decoration: underline; }
 label.chk { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
 label.chk input { accent-color: var(--fg); margin: 0; }

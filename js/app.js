@@ -375,7 +375,9 @@
   $('btnSimReset').onclick = () => App.Sim.reset();
 
   document.addEventListener('keydown', (e) => {
-    if (tab !== 'schema' || /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if (e.key === 'Escape' && tab !== 'schema' && App.state.focusCanal != null) { App.setFocusCanal(null); return; }
+    if (tab !== 'schema') return;
     if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelection(); }
     else if (e.key === 'r' || e.key === 'R') rotateSelection();
     else if (e.key === 'Enter') App.schemaView.endWireHere();
@@ -399,7 +401,19 @@
       if (tab === 'sim') renderSimPanel();
     }
   });
-  App.on('select', () => { App.schemaView.render(); renderInspector(); });
+  App.on('select', () => {
+    // Sélectionner un connecteur isole son canal ; toute autre sélection réaffiche tout
+    const sel = App.state.selection;
+    const c = sel && sel.kind === 'comp' && App.findComp(App.board(), sel.id);
+    App.setFocusCanal(c && c.type === 'connector' ? App.connCanal(c) : null);
+    App.schemaView.render();
+    renderInspector();
+  });
+  App.on('focus', (canal) => {
+    if (tab === 'schema') App.schemaView.render();
+    if (tab === 'sim') App.simView.render();
+    if (canal != null) App.toast('canal « ' + canal + ' » isolé — clic dans le vide ou Échap pour tout réafficher');
+  });
   App.on('project', () => {
     $('projectName').value = App.project.name;
     renderPalette();
