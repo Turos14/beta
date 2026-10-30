@@ -43,6 +43,7 @@
       '<button class="mini danger" data-act="del" title="supprimer">×</button></li>').join('');
   }
 
+  App.selectBoard = selectBoard;
   function selectBoard(id) {
     App.state.boardId = id;
     App.state.selection = null;
@@ -344,6 +345,20 @@
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch(() => { /* hors ligne indisponible */ });
   }
+
+  // ---- Options d'affichage (cases à cocher data-pref, mémorisées par navigateur) ----
+  const prefBoxes = document.querySelectorAll('[data-pref]');
+  prefBoxes.forEach(box => {
+    box.checked = !!App.prefs[box.dataset.pref];
+    box.onchange = () => App.setPref(box.dataset.pref, box.checked);
+  });
+  App.on('prefs', (key) => {
+    prefBoxes.forEach(box => { if (box.dataset.pref === key) box.checked = !!App.prefs[key]; });
+    if (key === 'showLinks') {
+      if (tab === 'schema') App.schemaView.render();
+      if (tab === 'sim') App.simView.render();
+    }
+  });
 
   // ---- Barres d'outils ----
   document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => App.showTab(b.dataset.tab));

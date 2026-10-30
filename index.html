@@ -57,6 +57,7 @@
           <button id="btnRotate">pivoter</button>
           <button id="btnDelete">supprimer</button>
           <button id="btnFit">recentrer</button>
+          <label class="chk" title="afficher les liaisons entre connecteurs de même canal"><input type="checkbox" data-pref="showLinks"> liaisons</label>
         </div>
         <div class="work">
           <div class="canvas-wrap"><svg id="schemaSvg" class="schema-svg"></svg></div>
@@ -87,6 +88,8 @@
               <option value="row">côte à côte</option>
             </select>
           </label>
+          <label class="chk" title="câbles reliant les connecteurs de même canal d'une plaque à l'autre"><input type="checkbox" data-pref="cables3d"> câbles entre plaques</label>
+          <label class="chk" title="assombrir les objets éloignés (brouillard)"><input type="checkbox" data-pref="fog3d"> assombrissement</label>
           <button id="btnSimToggle3d" class="sim-toggle">▶ simuler</button>
         </div>
         <div class="canvas-wrap" id="view3dWrap"></div>
@@ -99,6 +102,7 @@
           <button id="btnSimReset">réinitialiser</button>
           <span class="hint">cliquer sur interrupteurs / boutons · glisser les potentiomètres</span>
           <span class="spacer"></span>
+          <label class="chk" title="afficher les liaisons entre connecteurs de même canal"><input type="checkbox" data-pref="showLinks"> liaisons</label>
           <span id="simStatus" class="status">arrêté</span>
         </div>
         <div class="work">

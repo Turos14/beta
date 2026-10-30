@@ -168,6 +168,13 @@ table.pins input, table.pins select { width: 100%; }
 .swatches .sw { width: 22px; height: 22px; padding: 0; border: 1px solid var(--line-2); }
 .swatches .sw:hover { outline: 1px solid var(--accent); }
 .net-val { fill: var(--warn); font: 9px var(--font); pointer-events: none; }
+.link-line { fill: none; stroke-width: 1.5; stroke-dasharray: 5 4; opacity: .8; pointer-events: none; }
+.link-line.off, .link-line.float { opacity: .3; }
+.link-line.on { stroke-width: 2.5; opacity: 1; }
+.link-tag { font: 9px var(--font); cursor: pointer; }
+.link-tag:hover { text-decoration: underline; }
+label.chk { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
+label.chk input { accent-color: var(--fg); margin: 0; }
 .interactive { cursor: pointer; }
 .readout { color: var(--warn); font-size: 12px; }
 input[type=range] { accent-color: var(--fg); padding: 0; border: 0; background: transparent; }

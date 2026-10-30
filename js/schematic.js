@@ -183,7 +183,12 @@
       el('title', {}, m).textContent = sim ? '' : 'extrémité libre : cliquer pour partir d\'ici';
     });
 
+    // Liaisons entre connecteurs de même canal (option « liaisons ») : traits sous les
+    // composants, étiquettes des plaques distantes au-dessus (cliquables)
+    const linkLines = App.prefs.showLinks ? el('g', {}, svg) : null;
     const comps = el('g', {}, svg);
+    const linkTags = App.prefs.showLinks ? el('g', {}, svg) : null;
+    if (linkLines) drawLinks(linkLines, linkTags, b, sim);
     this.animated = false;
     b.components.forEach(c => {
       const def = App.getDef(c.type);
@@ -279,6 +284,59 @@
     this.drawGhost(pt);
   };
 
+  // Relie en pointillés les connecteurs de même canal de la plaque (chacun au plus proche
+  // déjà relié : arbre couvrant minimal) et indique sous chacun les autres plaques du canal.
+  function drawLinks(lines, tags, b, sim) {
+    const Sim = App.Sim, boards = App.project.schematics;
+    const def = App.getDef('connector');
+    if (!def) return;
+    const g = App.defGeom(def);
+    const center = c => [c.x + g.w / 2, c.y + g.h / 2];
+    const all = App.channels();
+    const local = {};
+    b.components.forEach(c => {
+      if (c.type !== 'connector') return;
+      const canal = String(App.compProps(c, def).canal);
+      (local[canal] = local[canal] || []).push(c);
+    });
+    Object.keys(local).forEach(canal => {
+      const list = local[canal], color = App.channelColor(canal);
+      let cls = 'link-line';
+      if (sim) {
+        const v = Sim.valueAt(b.id, list[0].id, 'P');
+        cls += v === null ? ' float' : v > 0.5 ? ' on' : ' off';
+      }
+      const tree = [list[0]], rest = list.slice(1);
+      while (rest.length) {
+        let best = null;
+        tree.forEach(a => rest.forEach((r, i) => {
+          const [ax, ay] = center(a), [rx, ry] = center(r);
+          const d = Math.hypot(ax - rx, ay - ry);
+          if (!best || d < best.d) best = { a, i, d };
+        }));
+        const r = rest.splice(best.i, 1)[0];
+        const [x1, y1] = center(best.a), [x2, y2] = center(r);
+        el('line', { x1, y1, x2, y2, class: cls, style: 'stroke:' + color }, lines);
+        tree.push(r);
+      }
+      // Autres plaques reliées par ce canal ; le clic ouvre la suivante dans l'ordre
+      const others = [];
+      (all[canal] || []).forEach(e => { if (e.board.id !== b.id && !others.includes(e.board)) others.push(e.board); });
+      if (!others.length) return;
+      const idx = boards.indexOf(b), n = boards.length;
+      const dist = o => (boards.indexOf(o) - idx + n) % n;
+      const next = others.slice().sort((p, q) => dist(p) - dist(q))[0];
+      const names = others.map(o => o.name);
+      const txt = '→ ' + (names.length > 2 ? names.slice(0, 2).join(', ') + ' +' + (names.length - 2) : names.join(', '));
+      list.forEach(c => {
+        const [x, y] = center(c);
+        const t = el('text', { x, y: y + g.h / 2 + 11, 'text-anchor': 'middle', class: 'link-tag', 'data-goto': next.id, style: 'fill:' + color }, tags);
+        t.textContent = txt;
+        el('title', {}, t).textContent = 'canal ' + canal + ' : relié à ' + names.join(', ') + ' — cliquer pour ouvrir « ' + next.name + ' »';
+      });
+    });
+  }
+
   // Valeur 0..1 d'un curseur selon la position du pointeur
   function sliderValue(comp, def, pt) {
     // Le curseur est toujours dessiné horizontalement, centré sur le composant
@@ -321,7 +379,16 @@
       const viaEl = e.target.closest('[data-via]');
       const endEl = e.target.closest('[data-end]');
       const ptEl = e.target.closest('[data-pt]');
+      const gotoEl = e.target.closest('[data-goto]');
       const edit = self.mode === 'edit';
+
+      // Étiquette de liaison : ouvrir la plaque reliée
+      if (gotoEl) {
+        self.cancelWire();
+        App.selectBoard(gotoEl.getAttribute('data-goto'));
+        act = null;
+        return;
+      }
 
       // Poignées du fil sélectionné
       if (edit && !self.pending && (viaEl || endEl)) {
