@@ -24,7 +24,7 @@ Les deux instances de [`App.SchematicView`](API-schematic) (`#schemaSvg` en édi
 | Fonction | Rôle |
 |---|---|
 | `renderBoards()` | Liste des plaques : nom, nombre de composants, boutons `↑` (sauf la première), `✎`, `×`. |
-| `selectBoard(id)` | Change de plaque, vide la sélection, annule le fil en cours, re-dessine la vue active. |
+| `selectBoard(id)` (aussi `App.selectBoard`) | Change de plaque, vide la sélection, annule le fil en cours, re-dessine la vue active. |
 | `renameBoard(b)` | Demande un nouveau nom (`prompt`) et l'applique s'il n'est pas vide. |
 
 Clic sur la liste : `×` supprime (confirmation, refusé s'il ne reste qu'une plaque), `✎` renomme, `↑` remonte la plaque (ordre d'empilement en 3D), ailleurs sélectionne. Double-clic : renommer.
@@ -82,6 +82,10 @@ Clic : `schemaView.addAt(type)` au centre. Glisser : le type passe dans `dataTra
 |---|---|
 | `$(id)` | `document.getElementById`. |
 | `esc(s)` | Échappement HTML. |
+
+## Options d'affichage
+
+Toute case `<input type="checkbox" data-pref="…">` est reliée à `App.prefs` : cochée selon la valeur au démarrage, elle appelle `App.setPref` quand on la change. Sur l'événement `prefs`, les cases de même option sont synchronisées (la case **liaisons** existe dans le schéma et dans le simulateur) et la vue 2D active est redessinée pour `showLinks`.
 
 ## Raccourcis clavier (onglet Schéma, hors champ de saisie)
 

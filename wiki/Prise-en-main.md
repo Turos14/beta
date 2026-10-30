@@ -54,8 +54,22 @@ le **même canal** (propriété `canal`, ex. `PWR`, `GND`, `DATA`). Tous les con
 même canal forment un seul nœud électrique, quelle que soit leur plaque :
 
 - dans le simulateur, la tension passe d'une plaque à l'autre ;
-- dans la vue 3D, un câble coloré relie les plaques ;
-- l'inspecteur (rien de sélectionné) affiche la liste des liaisons inter-plaques.
+- dans la vue 3D, un câble coloré relie les plaques (case **câbles entre plaques** pour les masquer) ;
+- l'inspecteur (rien de sélectionné) affiche la liste des liaisons inter-plaques ;
+- dans le schéma et le simulateur, la case **liaisons** affiche ces liens (voir ci-dessous).
+
+Chaque canal a sa propre couleur, identique en 2D et en 3D.
+
+### Afficher les liaisons (schéma et simulateur)
+
+Case **liaisons** dans la barre d'outils du schéma ou du simulateur (les deux sont liées) :
+
+- les connecteurs de même canal sur la plaque affichée sont reliés en **pointillés** (chacun
+  au plus proche, pour rester lisible) ;
+- sous chaque connecteur relié à **d'autres plaques**, une étiquette `→ Plaque` les liste
+  (au-delà de deux : `→ A, B +3`). **Cliquer** sur l'étiquette ouvre la plaque suivante du canal ;
+- dans le simulateur, les pointillés sont vifs et épais quand le canal est sous tension,
+  estompés sinon.
 
 ## Onglet Schéma
 
@@ -120,6 +134,8 @@ Liste de la bibliothèque à gauche, éditeur à droite. Voir
 | Déplacer | clic droit + glisser |
 | Zoomer | molette |
 | Disposition | menu `empilées` / `côte à côte` |
+| Câbles entre plaques | case à cocher : affiche / masque les câbles reliant les connecteurs de même canal |
+| Assombrissement | case à cocher : brouillard qui assombrit les objets éloignés ; décocher pour tout voir avec la même luminosité |
 | Interagir | clic sur un interrupteur (bascule), un bouton (maintenir) ou un potentiomètre (+25 % par clic) |
 
 Pendant la simulation : les LED s'allument, les moteurs tournent, les pistes et les câbles
@@ -136,6 +152,12 @@ Couleur des fils : **vert vif** = tension > 0,5 V, **vert sombre** = 0 V,
 **pointillé gris** = flottant (aucune source). Un fil coloré garde sa couleur : il est
 plein quand il est sous tension, et estompé à 0 V ou s'il est flottant. Survoler un fil
 affiche sa tension.
+
+## Options d'affichage mémorisées
+
+Les cases **liaisons**, **câbles entre plaques** et **assombrissement** sont mémorisées dans le
+navigateur (clé `circuit3d.prefs`), indépendamment du projet : elles ne sont pas dans le JSON.
+Par défaut : liaisons masquées, câbles 3D et assombrissement activés.
 
 ## Onglet JSON
 

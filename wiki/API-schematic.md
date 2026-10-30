@@ -62,6 +62,7 @@ Reconstruit tout le SVG :
 1. Motif de grille (points tous les 10 px) sur un grand rectangle de fond (`data-bg`).
 2. Fils : tracé visible (couleur `wire.color` en style inline, classe `colored`) + tracé large transparent cliquable (`data-wire`). En mode `sim`, classe `on` / `off` / `float` selon `Sim.wireValue` (un fil coloré est estompé à `off` / `float`) et infobulle avec la tension (et « conflit »).
 3. Extrémités libres : un carré `data-pt="x,y"` par point ; un point plein (`junction`) si plusieurs extrémités s'y rejoignent.
+3 bis. Si `App.prefs.showLinks` : liaisons entre connecteurs (`drawLinks`), traits sous les composants, étiquettes au-dessus.
 4. Composants via `App.drawComponent`. Une instance de type inconnu est affichée `? type` en rouge. En mode `sim`, une erreur d'exécution est affichée au-dessus (`⚠ message`).
 5. Poignées du fil sélectionné (mode édition) : ronds `data-via="filId|index"` pour les points de passage, carrés `data-end="filId|a|b"` pour les extrémités libres.
 6. Calque du fil fantôme.
@@ -96,6 +97,7 @@ Pose les gestionnaires d'événements sur le SVG :
 |---|---|---|
 | molette | tous | `zoomAt` ×1,15 / ÷1,15 sous le pointeur |
 | 2 doigts | tous | pincement = zoom |
+| clic sur une étiquette de liaison (`data-goto`) | tous | annule le fil en cours et ouvre la plaque indiquée (`App.selectBoard`) |
 | 2 appuis < 400 ms et < 6 px | edit | double-clic : `handleDouble` (détection maison, le navigateur n'émet pas `dblclick` quand le SVG est re-dessiné entre deux clics) |
 | appui sur une poignée du fil sélectionné | edit | glisser un point de passage ou une extrémité libre ; au relâchement, une extrémité près d'un pôle (8 px) s'y branche (`App.pinNear`) ; `change('wire')` |
 | clic pôle ou carré d'extrémité libre | edit | sans fil en cours : `startWire` ; sinon `finishWire` |
@@ -127,6 +129,11 @@ Crée un élément SVG avec ses attributs et l'ajoute à `parent`.
 
 ### `fmtV(v) → string`
 `'2.50 V'`, ou `'Z (flottant)'` pour `null`.
+
+### `drawLinks(lines, tags, b, sim)`
+Pour chaque canal présent sur la plaque `b` :
+1. relie ses connecteurs en pointillés (`link-line`, couleur `App.channelColor`) selon un **arbre couvrant minimal** (algorithme de Prim : chaque connecteur est relié au plus proche de ceux déjà reliés) ; en mode `sim`, classe `on` / `off` / `float` selon la tension du canal ;
+2. si le canal existe sur d'autres plaques, écrit sous chaque connecteur `→ Plaque1, Plaque2 (+n)` (`link-tag`, infobulle avec la liste complète) ; `data-goto` désigne la plaque suivante dans l'ordre des plaques, en revenant au début.
 
 ### `sliderValue(comp, def, pt) → number`
 Position 0..1 du pointeur sur la glissière (toujours dessinée à l'horizontale, centrée, largeur affichée − 16 px). Non bornée : `Sim.interact` s'en charge.

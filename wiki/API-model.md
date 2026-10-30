@@ -16,6 +16,25 @@ Toutes les fonctions sont attachées à `App`.
 
 ---
 
+## Préférences d'affichage
+
+### `App.prefs`
+Options propres au navigateur (pas au projet), relues au chargement depuis `localStorage` (clé `circuit3d.prefs`) :
+
+| Clé | Défaut | Effet |
+|---|---|---|
+| `showLinks` | `false` | Liaisons entre connecteurs dans le schéma et le simulateur. |
+| `cables3d` | `true` | Câbles entre plaques dans la vue 3D. |
+| `fog3d` | `true` | Brouillard (assombrissement des objets éloignés) en 3D. |
+
+### `App.setPref(key, value)`
+Change une option, l'enregistre (erreurs de stockage ignorées) et émet `prefs` avec le nom de l'option.
+
+### `App.channelColor(canal) → string`
+Couleur `hsl(…)` stable d'un canal de connecteur, dérivée d'un hachage de son nom : la même en 2D (liaisons) et en 3D (câbles), et la même d'une session à l'autre.
+
+---
+
 ## Événements
 
 ### `App.on(evt, fn)`

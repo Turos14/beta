@@ -25,6 +25,8 @@ Vue 3D avec Three.js r128 + OrbitControls. Objet public : **`App.View3D`** (alia
 | `visible` | Onglet affiché (la boucle ne dessine rien sinon). |
 | `needsFrame` | Une nouvelle image est à dessiner (rendu à la demande). |
 | `pressed` | Bouton 3D actuellement maintenu. |
+| `cables` | Groupe des câbles entre plaques ; sa visibilité suit `App.prefs.cables3d` sans reconstruire la scène. |
+| `fogDist` | Distance caméra–scène du dernier recadrage, base du brouillard. |
 
 ## Fonctions publiques
 
@@ -46,7 +48,7 @@ Adapte le renderer et le ratio de la caméra à la taille du conteneur.
 5. **Câbles inter-plaques** : pour chaque canal, un connecteur représentant par plaque, chaînés dans l'ordre des plaques. Tube coloré (une teinte par canal) le long d'une courbe Catmull-Rom :
    - empilées : sortie par le bord latéral des plaques, pour rester visible ;
    - côte à côte : arche au-dessus des plaques.
-6. Si `refit` : centre OrbitControls sur la scène, place la caméra en vue plongeante et adapte le **brouillard** (de 1,2 à 3 fois la distance de la caméra) et la profondeur de vue à la taille de la scène, pour que les grands projets ne disparaissent pas dans le brouillard.
+6. Si `refit` : centre OrbitControls sur la scène, place la caméra en vue plongeante, mémorise `fogDist` et adapte la profondeur de vue à la taille de la scène, puis `applyFog()`.
 
 Les étiquettes fixes de même texte et même couleur partagent une seule texture (`cachedLabel`) : un projet de 1 000 composants se construit en moins d'une demi-seconde.
 
@@ -62,6 +64,9 @@ Reporte l'état de la simulation sur la scène :
 | afficheurs | `state.text` | texte du sprite (redessiné seulement s'il change) |
 | pistes | tension du fil (`Sim.wireValue`) | lueur proportionnelle à la tension (au moins 15 % dès que le nœud est piloté, même à 0 V ; éteinte s'il est flottant), seulement pendant la simulation |
 | câbles | tension du canal | lueur de 0,15 à 0,95 |
+
+### `V3.applyFog()`
+Brouillard de `1,2 × fogDist` à `3 × fogDist` si `App.prefs.fog3d`, sinon repoussé à l'infini (1e9) : on ne retire pas le brouillard de la scène, ce qui évite de recompiler les matériaux.
 
 ### `V3.show()`
 À l'ouverture de l'onglet : `init` au premier appel, redimensionnement, reconstruction si `dirty` (recadrée la première fois), démarrage de la boucle.
@@ -102,3 +107,6 @@ Clic gauche sur un composant interactif : désactive OrbitControls (pour ne pas 
 | `change` | `dirty = true` ; reconstruction immédiate (sans recadrage) si l'onglet est visible. |
 | `project` | `dirty = true` ; reconstruction recadrée si l'onglet est visible. |
 | `sim`, `simstate` | `needsFrame = true`. |
+| `prefs` | `cables3d` : affiche / masque le groupe `cables` ; `fog3d` : `applyFog()`. |
+
+Les câbles prennent la couleur `App.channelColor(canal)`, comme les liaisons en 2D.
