@@ -23,6 +23,23 @@
     ['#ff9f40', 'orange'], ['#f0f0f0', 'blanc'], ['#9e9e9e', 'gris'], ['#c77dff', 'violet'], ['#00e5ff', 'cyan']
   ];
 
+  // ---- Préférences d'affichage (propres à ce navigateur) ----
+  const PREFS_KEY = 'circuit3d.prefs';
+  App.prefs = { showLinks: false, cables3d: true, fog3d: true };
+  try { Object.assign(App.prefs, JSON.parse(localStorage.getItem(PREFS_KEY)) || {}); } catch (e) { /* stockage indisponible */ }
+  App.setPref = function (key, value) {
+    App.prefs[key] = value;
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(App.prefs)); } catch (e) { /* stockage indisponible */ }
+    App.emit('prefs', key);
+  };
+
+  // Couleur stable d'un canal de connecteur (identique en 2D et en 3D)
+  App.channelColor = function (canal) {
+    let h = 0;
+    for (const ch of String(canal)) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+    return 'hsl(' + (h % 360) + ', 90%, 60%)';
+  };
+
   // ---- Événements ----
   App.on = (evt, fn) => { (listeners[evt] = listeners[evt] || []).push(fn); };
   App.emit = (evt, data) => { (listeners[evt] || []).forEach(fn => fn(data)); };

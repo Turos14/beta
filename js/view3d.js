@@ -13,6 +13,8 @@
 
   let renderer, scene, camera, controls, root, raycaster, wrap;
   let dyn = null;             // objets animés
+  let cables = null;          // groupe des câbles entre plaques (masquable)
+  let fogDist = 30;           // distance de référence du brouillard (taille de la scène)
   let dirty = true, visible = false, raf = 0, needsFrame = true;
   let pressed = null;
 
@@ -96,6 +98,7 @@
     renderer.domElement.addEventListener('pointerdown', onDown);
     window.addEventListener('pointerup', onUp);
     document.getElementById('layout3d').addEventListener('change', () => { dirty = true; V3.build(true); });
+    V3.applyFog();
     return true;
   };
 
@@ -353,6 +356,9 @@
     });
 
     // Câbles entre plaques (connecteurs de même canal)
+    cables = new THREE.Group();
+    cables.visible = App.prefs.cables3d;
+    root.add(cables);
     const chans = App.channels();
     const boardIndex = {};
     boards.forEach((b, i) => { boardIndex[b.id] = i; });
@@ -366,8 +372,7 @@
       // un représentant par plaque, chaîné dans l'ordre des plaques
       const reps = [];
       list.forEach(e => { if (!reps.length || reps[reps.length - 1].board.id !== e.board.id) reps.push(e); });
-      const hue = (ci * 0.17 + 0.45) % 1;
-      const color = new THREE.Color().setHSL(hue, 0.9, 0.55);
+      const color = new THREE.Color(App.channelColor(ch));
       for (let k = 0; k < reps.length - 1; k++) {
         const a = connPos(reps[k]), b = connPos(reps[k + 1]);
         const up = new THREE.Vector3(0, 0.5, 0);
@@ -386,7 +391,7 @@
         const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
         const cm = mat(color, { emissive: color, emissiveIntensity: 0.15 });
         const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 48, 0.08, 8, false), cm);
-        root.add(tube);
+        cables.add(tube);
         dyn.cables.push({ mat: cm, board: reps[k].board.id, c: reps[k].comp.id, p: 'P' });
       }
     });
@@ -399,8 +404,8 @@
       camera.position.copy(center).add(new THREE.Vector3(size * 0.45, size * 0.5, size * 0.7));
       // Brouillard et profondeur de vue proportionnels à la scène (grands projets)
       const dist = camera.position.distanceTo(center);
-      scene.fog.near = dist * 1.2;
-      scene.fog.far = dist * 3;
+      fogDist = dist;
+      V3.applyFog();
       camera.far = Math.max(500, dist * 6);
       camera.updateProjectionMatrix();
       controls.update();
@@ -408,6 +413,15 @@
     dirty = false;
     needsFrame = true;
     V3.updateDynamic();
+  };
+
+  // Brouillard (assombrissement des objets éloignés) : activable dans la barre d'outils.
+  // Désactivé, on le repousse à l'infini plutôt que de le retirer (pas de recompilation des matériaux).
+  V3.applyFog = function () {
+    if (!scene) return;
+    scene.fog.near = App.prefs.fog3d ? fogDist * 1.2 : 1e9;
+    scene.fog.far = App.prefs.fog3d ? fogDist * 3 : 2e9;
+    needsFrame = true;
   };
 
   // ---- Mise à jour depuis la simulation ----
@@ -489,5 +503,9 @@
   App.on('change', () => { dirty = true; if (visible) V3.build(false); });
   App.on('project', () => { dirty = true; if (visible) V3.build(true); });
   App.on('sim', () => { needsFrame = true; });
+  App.on('prefs', (key) => {
+    if (key === 'cables3d' && cables) { cables.visible = App.prefs.cables3d; needsFrame = true; }
+    if (key === 'fog3d') V3.applyFog();
+  });
   App.on('simstate', () => { needsFrame = true; });
 })();
