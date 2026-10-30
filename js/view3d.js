@@ -50,8 +50,21 @@
     return sp;
   }
 
+  // Étiquette fixe partagée : un même texte (nom de signal répété sur de nombreux
+  // connecteurs) n'utilise qu'une seule texture
+  function cachedLabel(cache, text, color, height) {
+    const key = text + '|' + color;
+    if (!cache.has(key)) cache.set(key, makeLabel(text, color, height).material);
+    const sp = new THREE.Sprite(cache.get(key));
+    sp.scale.set(height * 4, height, 1);
+    return sp;
+  }
+
   const mat = (color, extra) => new THREE.MeshStandardMaterial(Object.assign({ color, roughness: 0.6, metalness: 0.1 }, extra));
-  const GOLD = mat('#c9a43a', { metalness: 0.8, roughness: 0.3 });
+  // Ressources partagées, créées seulement si Three.js a pu être chargé
+  const HAS_THREE = typeof THREE !== 'undefined';
+  const GOLD = HAS_THREE ? mat('#c9a43a', { metalness: 0.8, roughness: 0.3 }) : null;
+  const PAD_GEO = HAS_THREE ? new THREE.CylinderGeometry(0.07, 0.07, 0.03, 12) : null;   // pastille partagée
 
   V3.init = function () {
     wrap = document.getElementById('view3dWrap');
@@ -208,13 +221,14 @@
     if (root) {
       scene.remove(root);
       root.traverse(o => {
-        if (o.geometry) o.geometry.dispose();
+        if (o.geometry && o.geometry !== PAD_GEO) o.geometry.dispose();
         if (o.material && o.material !== GOLD) [].concat(o.material).forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
       });
     }
     root = new THREE.Group();
     scene.add(root);
     dyn = { leds: [], levers: [], caps: [], knobs: [], rotors: [], texts: [], traces: [], cables: [], hits: [] };
+    const labels = new Map();
 
     const layout = document.getElementById('layout3d').value;
     const boards = App.project.schematics;
@@ -289,7 +303,7 @@
         // Pastille sur les extrémités libres
         ['a', 'b'].forEach(k => {
           if (App.isPinEnd(w[k])) return;
-          const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.03, 12), tm);
+          const pad = new THREE.Mesh(PAD_GEO, tm);
           pad.position.copy(toLocal(w[k].x, w[k].y)); pad.position.y += 0.015;
           group.add(pad);
         });
@@ -319,14 +333,14 @@
         def.pins.forEach(p => {
           const pw = App.pinWorld(c, p.name);
           if (!pw) return;
-          const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.03, 12), GOLD);
+          const pad = new THREE.Mesh(PAD_GEO, GOLD);
           pad.position.copy(toLocal(pw.x, pw.y)); pad.position.y += 0.015;
           group.add(pad);
         });
 
         // Étiquette
         const text = def.id === 'connector' ? '⇄ ' + props.canal : (c.label || def.name);
-        const lbl = makeLabel(text, def.id === 'connector' ? '#00e5ff' : '#33ff66', 0.45);
+        const lbl = cachedLabel(labels, text, def.id === 'connector' ? '#00e5ff' : '#33ff66', 0.45);
         lbl.position.copy(grp.position); lbl.position.y += 1.05;
         group.add(lbl);
         if (def.display === 'value' || def.display === 'motor') {
@@ -383,6 +397,12 @@
       const size = box.getSize(new THREE.Vector3()).length() || 10;
       controls.target.copy(center);
       camera.position.copy(center).add(new THREE.Vector3(size * 0.45, size * 0.5, size * 0.7));
+      // Brouillard et profondeur de vue proportionnels à la scène (grands projets)
+      const dist = camera.position.distanceTo(center);
+      scene.fog.near = dist * 1.2;
+      scene.fog.far = dist * 3;
+      camera.far = Math.max(500, dist * 6);
+      camera.updateProjectionMatrix();
       controls.update();
     }
     dirty = false;
