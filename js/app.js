@@ -393,7 +393,10 @@
     App.JsonEditor.reload();
   });
   App.on('sim', () => {
-    if (tab === 'sim') { App.simView.render(); updateSimPanel(); }
+    if (tab !== 'sim') return;
+    // Grands circuits : ne redessiner le schéma que s'il a changé
+    if (App.Sim.changed || App.simView.animated) App.simView.render();
+    updateSimPanel();
   });
   App.on('simstate', () => { updateSimButtons(); updateSimPanel(); if (tab === 'sim') App.simView.render(); });
 

@@ -102,6 +102,7 @@
     this.via = [];        // points de passage du fil en cours
     this.ghost = null;
     this.motorAngle = {};
+    this.animated = false; // un moteur tourne sur la plaque affichée : redessiner à chaque image
     this.bind();
   }
   App.SchematicView = SchematicView;
@@ -183,6 +184,7 @@
     });
 
     const comps = el('g', {}, svg);
+    this.animated = false;
     b.components.forEach(c => {
       const def = App.getDef(c.type);
       if (!def) {
@@ -194,6 +196,7 @@
       const st = Sim.states[key] || {};
       if (def.display === 'motor' && sim && Sim.running) {
         this.motorAngle[key] = (this.motorAngle[key] || 0) + (st.speed || 0) * 0.3;
+        if (st.speed) this.animated = true;
       }
       App.drawComponent(comps, c, def, {
         mode: this.mode,
