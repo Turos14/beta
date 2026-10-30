@@ -7,9 +7,11 @@
  * nœuds d'entrée et impose une valeur sur ses sorties via son code `logic`. On itère
  * jusqu'à stabilité. Plusieurs sorties sur un même nœud : la plus haute l'emporte
  * (et le nœud est signalé en conflit). Un nœud sans source est flottant (null).
+ * Chaque pas repart des sorties du pas précédent : après un changement, le circuit se
+ * restabilise en quelques itérations, même s'il enchaîne de nombreuses portes.
  */
 (function () {
-  const MAX_ITER = 40;
+  const MAX_ITER = 200;
   const compiled = {};
 
   const Sim = App.Sim = {
@@ -22,6 +24,8 @@
     netVal: {},     // id de nœud -> tension | null
     conflicts: {},  // id de nœud -> true
     errors: {},     // clé composant -> message d'erreur
+    lastOutputs: null, // sorties du dernier état stable (point de départ du pas suivant)
+    changed: true,  // le dernier pas a modifié des sorties, des états ou un contrôle (à redessiner)
     dirty: true
   };
 
@@ -77,8 +81,11 @@
     });
     Sim.pinNet = {};
     Object.keys(parent).forEach(k => { if (!k.startsWith('canal:') && !k.startsWith('pt:')) Sim.pinNet[k] = find(k); });
+    // Nœud de chaque pôle, précalculé pour la boucle de simulation
+    Sim.items.forEach(it => { it.nets = it.def.pins.map(p => Sim.pinNet[pinKey(it.board.id, it.comp.id, p.name)]); });
     Sim.wireNet = {};
     App.project.schematics.forEach(s => s.wires.forEach(w => { Sim.wireNet[s.id + '/' + w.id] = find(endKey(s.id, w.a)); }));
+    Sim.lastOutputs = null;
     Sim.dirty = false;
   };
 
@@ -95,11 +102,11 @@
     Sim.items.forEach(it => {
       const out = outputs[it.key];
       if (!out) return;
-      it.def.pins.forEach(p => {
+      it.def.pins.forEach((p, i) => {
         if (p.type !== 'out' && p.type !== 'io') return;
         const v = out[p.name];
         if (v === null || v === undefined) return;
-        const net = Sim.pinNet[pinKey(it.board.id, it.comp.id, p.name)];
+        const net = it.nets[i];
         (drivers[net] = drivers[net] || []).push(v);
       });
     });
@@ -115,7 +122,8 @@
   // Calcule un état stable du circuit au temps t
   Sim.evaluate = function () {
     if (Sim.dirty) Sim.rebuild();
-    let outputs = {}, nets = { vals: {}, conflicts: {} }, newStates = {};
+    let outputs = Sim.lastOutputs || {}, nets = { vals: {}, conflicts: {} }, newStates = {};
+    let changed = !Sim.lastOutputs;
     const errors = {};
     for (let iter = 0; iter < MAX_ITER; iter++) {
       nets = netsFromOutputs(outputs);
@@ -123,8 +131,8 @@
       newStates = {};
       Sim.items.forEach(it => {
         const inp = {};
-        it.def.pins.forEach(p => {
-          const v = nets.vals[Sim.pinNet[pinKey(it.board.id, it.comp.id, p.name)]];
+        it.def.pins.forEach((p, i) => {
+          const v = nets.vals[it.nets[i]];
           inp[p.name] = v === undefined ? null : v;
         });
         const state = Object.assign({}, Sim.states[it.key]);
@@ -140,11 +148,15 @@
         newStates[it.key] = state;
       });
       const same = JSON.stringify(next) === JSON.stringify(outputs);
+      if (!same) changed = true;
       outputs = next;
       if (same) break;
     }
+    Sim.lastOutputs = outputs;
     Sim.netVal = nets.vals;
     Sim.conflicts = nets.conflicts;
+    if (!changed && JSON.stringify(newStates) !== JSON.stringify(Sim.states)) changed = true;
+    Sim.changed = changed;
     Sim.states = newStates;
     Sim.errors = errors;
   };
@@ -188,9 +200,10 @@
   };
   Sim.toggle = () => (Sim.running ? Sim.stop() : Sim.start());
   Sim.reset = function () {
-    Sim.t = 0; Sim.states = {}; Sim.ui = {}; Sim.netVal = {}; Sim.errors = {};
+    Sim.t = 0; Sim.states = {}; Sim.ui = {}; Sim.netVal = {}; Sim.errors = {}; Sim.lastOutputs = null;
     Sim.dirty = true;
     if (!Sim.running) Sim.evaluate();
+    Sim.changed = true;
     App.emit('sim');
   };
 
@@ -207,6 +220,7 @@
       if (action === 'click') ui.value = Math.round((ui.value + 0.25) * 4) % 5 / 4;
     }
     if (!Sim.running) Sim.evaluate();
+    Sim.changed = true;
     App.emit('sim');
   };
 
