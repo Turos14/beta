@@ -14,6 +14,8 @@
   let renderer, scene, camera, controls, root, raycaster, wrap;
   let dyn = null;             // objets animés
   let cables = null;          // groupe des câbles entre plaques (masquable)
+  let localCables = null;     // câbles du canal isolé entre connecteurs d'une même plaque
+  let connPosOf = null;       // position 3D d'un connecteur { board, comp } (scène courante)
   let fogDist = 30;           // distance de référence du brouillard (taille de la scène)
   let dirty = true, visible = false, raf = 0, needsFrame = true;
   let pressed = null;
@@ -366,6 +368,8 @@
       const c = entry.comp;
       return new THREE.Vector3((c.x + g.w / 2 - pl.cx) * S, BOARD_T / 2 + 0.35, (c.y + g.h / 2 - pl.cy) * S).add(pl.origin);
     };
+    connPosOf = connPos;
+    localCables = null;
     Object.keys(chans).forEach((ch, ci) => {
       const list = chans[ch].slice().sort((a, b) => boardIndex[a.board.id] - boardIndex[b.board.id]);
       // un représentant par plaque, chaîné dans l'ordre des plaques
@@ -421,8 +425,38 @@
     if (!cables) return;
     const focus = App.state.focusCanal;
     cables.children.forEach(t => { t.visible = focus != null ? t.userData.canal === focus : App.prefs.cables3d; });
+    buildLocalCables(focus);
     needsFrame = true;
   };
+
+  // Canal isolé : arcs entre ses connecteurs d'une même plaque (chacun relié au plus
+  // proche déjà relié, comme les liaisons 2D). Construits à la demande pour rester léger.
+  function buildLocalCables(focus) {
+    if (localCables) {
+      root.remove(localCables);
+      localCables.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+      localCables = null;
+    }
+    if (focus == null || !connPosOf || !root) return;
+    const byBoard = {};
+    (App.channels()[focus] || []).forEach(e => (byBoard[e.board.id] = byBoard[e.board.id] || []).push(connPosOf(e)));
+    const color = new THREE.Color(App.channelColor(focus));
+    localCables = new THREE.Group();
+    Object.values(byBoard).forEach(pts => {
+      const tree = [pts[0]], rest = pts.slice(1);
+      while (rest.length) {
+        let best = null;
+        tree.forEach(a => rest.forEach((r, i) => { const d = a.distanceTo(r); if (!best || d < best.d) best = { a, i, d }; }));
+        const b = rest.splice(best.i, 1)[0], a = best.a;
+        const lift = Math.min(1.5, 0.4 + best.d * 0.15);
+        const mid = a.clone().add(b).multiplyScalar(0.5).add(new THREE.Vector3(0, lift, 0));
+        const curve = new THREE.CatmullRomCurve3([a, a.clone().add(new THREE.Vector3(0, 0.3, 0)), mid, b.clone().add(new THREE.Vector3(0, 0.3, 0)), b], false, 'centripetal');
+        localCables.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 32, 0.06, 8, false), mat(color, { emissive: color, emissiveIntensity: 1 })));
+        tree.push(b);
+      }
+    });
+    root.add(localCables);
+  }
 
   // Brouillard (assombrissement des objets éloignés) : activable dans la barre d'outils.
   // Désactivé, on le repousse à l'infini plutôt que de le retirer (pas de recompilation des matériaux).
