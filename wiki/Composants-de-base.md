@@ -20,6 +20,8 @@ Elle est **copiée dans chaque projet** (`project.library`) : tous ces composant
 | [Potentiomètre](#pot) | `pot` | Commandes | VCC, GND, OUT | slider | none | pot |
 | [Horloge](#clock) | `clock` | Commandes | OUT | none | led | chip |
 | [Résistance](#resistor) | `resistor` | Passifs | A, B | none | none | resistor |
+| [Diode](#diode) | `diode` | Passifs | A, K | none | none | diode |
+| [Diode Schottky](#schottky) | `schottky` | Passifs | A, K | none | none | diode |
 | [LED](#led) | `led` | Sorties | A, K | none | led | led |
 | [Moteur](#motor) | `motor` | Sorties | A, B | none | motor | motor |
 | [Voltmètre](#probe) | `probe` | Mesure | IN | none | value | probe |
@@ -202,6 +204,39 @@ return { B: inp.A };
 ```
 
 **Fonctionnement** : recopie la tension de `A` vers `B`. Le paramètre `ohms` est informatif (il n'est pas utilisé par la simulation logique), mais il apparaît dans l'inspecteur et le JSON.
+
+<a id="diode"></a>
+### Diode — `diode`
+
+Ne conduit que de l'anode A vers la cathode K : K reçoit A − Vf, rien en sens inverse.
+
+| Pôle | Côté | Type |
+|---|---|---|
+| `A` | gauche | in |
+| `K` | droite | out |
+
+- **Paramètres (props)** : `{"Vf":0.7}`
+- **Interaction** : `none` · **Affichage** : `none` · **Forme 3D** : `diode` · **Couleur** : `#b0b0b0`
+
+```js
+if (inp.A == null) return { K: null };
+const v = inp.A - props.Vf;
+return { K: v > 0 ? v : null };
+```
+
+**Fonctionnement** : `K` reçoit la tension de l'anode diminuée de la tension de seuil `Vf`
+(0,7 V, diode silicium). Si `A` est flottant ou sous `Vf`, `K` n'est pas piloté. `A` ne fait
+que lire : une tension imposée sur `K` ne remonte jamais vers `A` (diode bloquée en inverse).
+Plusieurs diodes sur un même nœud forment un « OU câblé » : la plus haute tension l'emporte
+(le nœud est alors signalé en conflit, comme tout nœud à plusieurs sources différentes).
+La tension de claquage inverse n'est pas simulée.
+
+<a id="schottky"></a>
+### Diode Schottky — `schottky`
+
+Diode à faible tension de seuil (Vf ≈ 0,3 V) : K reçoit A − Vf, rien en sens inverse.
+
+Mêmes pôles et même programme que la [Diode](#diode), avec `{"Vf":0.3}` et la couleur `#5d6d7e`.
 
 ---
 
