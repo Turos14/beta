@@ -144,6 +144,16 @@
         lead.rotation.z = Math.PI / 2; lead.position.y = 0.2; grp.add(lead);
         break;
       }
+      case 'diode': {
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, w * 0.45, 16), mat(color));
+        body.rotation.z = Math.PI / 2; body.position.y = 0.2; grp.add(body);
+        // Anneau argenté côté cathode (pôle de droite)
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.07, 16), mat('#e8e8e8'));
+        band.rotation.z = Math.PI / 2; band.position.set(w * 0.17, 0.2, 0); grp.add(band);
+        const lead = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, w, 6), GOLD);
+        lead.rotation.z = Math.PI / 2; lead.position.y = 0.2; grp.add(lead);
+        break;
+      }
       case 'led': {
         const c = props.couleur || color;
         const base = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.08, 20), mat(c, { transparent: true, opacity: 0.8 }));

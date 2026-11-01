@@ -76,6 +76,20 @@ App.DEFAULT_LIBRARY = [
     logic: 'return { B: inp.A };'
   },
   {
+    id: 'diode', name: 'Diode', category: 'Passifs', color: '#b0b0b0',
+    description: 'Ne conduit que de l\'anode A vers la cathode K : K reçoit A − Vf, rien en sens inverse.',
+    pins: [{ name: 'A', side: 'left', type: 'in' }, { name: 'K', side: 'right', type: 'out' }],
+    props: { Vf: 0.7 }, interactive: 'none', display: 'none', shape3d: 'diode',
+    logic: 'if (inp.A == null) return { K: null };\nconst v = inp.A - props.Vf;\nreturn { K: v > 0 ? v : null };'
+  },
+  {
+    id: 'schottky', name: 'Diode Schottky', category: 'Passifs', color: '#5d6d7e',
+    description: 'Diode à faible tension de seuil (Vf ≈ 0,3 V) : K reçoit A − Vf, rien en sens inverse.',
+    pins: [{ name: 'A', side: 'left', type: 'in' }, { name: 'K', side: 'right', type: 'out' }],
+    props: { Vf: 0.3 }, interactive: 'none', display: 'none', shape3d: 'diode',
+    logic: 'if (inp.A == null) return { K: null };\nconst v = inp.A - props.Vf;\nreturn { K: v > 0 ? v : null };'
+  },
+  {
     id: 'led', name: 'LED', category: 'Sorties', color: '#ff3b3b',
     description: 'Diode électroluminescente : s\'allume quand A − K dépasse le seuil.',
     pins: [{ name: 'A', side: 'left', type: 'in' }, { name: 'K', side: 'right', type: 'in' }],

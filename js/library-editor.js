@@ -8,7 +8,7 @@
   const TYPES = { in: 'entrée', out: 'sortie', io: 'entrée/sortie', link: 'liaison' };
   const INTERACTIVE = { none: 'aucun', switch: 'interrupteur', button: 'bouton', slider: 'curseur' };
   const DISPLAY = { none: 'aucun', led: 'voyant', value: 'valeur (state.text)', motor: 'rotation (state.speed)' };
-  const SHAPES = ['chip', 'box', 'cylinder', 'resistor', 'led', 'switch', 'button', 'pot', 'motor', 'probe', 'connector'];
+  const SHAPES = ['chip', 'box', 'cylinder', 'resistor', 'diode', 'led', 'switch', 'button', 'pot', 'motor', 'probe', 'connector'];
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const opts = (map, cur) => Object.keys(map).map(k => '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + esc(map[k]) + '</option>').join('');
