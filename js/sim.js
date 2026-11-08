@@ -68,13 +68,14 @@
         const def = App.getDef(c.type);
         if (!def) return;
         const props = App.compProps(c, def);
-        def.pins.forEach(p => {
+        const pins = App.compPins(c, def);
+        pins.forEach(p => {
           const k = pinKey(s.id, c.id, p.name);
           find(k);
           if (p.type === 'link') union(k, 'canal:' + String(props.canal));
         });
         if (def.id !== 'connector') {
-          Sim.items.push({ key: compKey(s.id, c.id), board: s, comp: c, def, props, fn: Sim.compile(def) });
+          Sim.items.push({ key: compKey(s.id, c.id), board: s, comp: c, def, props, pins, fn: Sim.compile(def) });
         }
       });
       s.wires.forEach(w => union(endKey(s.id, w.a), endKey(s.id, w.b)));
@@ -82,7 +83,7 @@
     Sim.pinNet = {};
     Object.keys(parent).forEach(k => { if (!k.startsWith('canal:') && !k.startsWith('pt:')) Sim.pinNet[k] = find(k); });
     // Nœud de chaque pôle, précalculé pour la boucle de simulation
-    Sim.items.forEach(it => { it.nets = it.def.pins.map(p => Sim.pinNet[pinKey(it.board.id, it.comp.id, p.name)]); });
+    Sim.items.forEach(it => { it.nets = it.pins.map(p => Sim.pinNet[pinKey(it.board.id, it.comp.id, p.name)]); });
     Sim.wireNet = {};
     App.project.schematics.forEach(s => s.wires.forEach(w => { Sim.wireNet[s.id + '/' + w.id] = find(endKey(s.id, w.a)); }));
     Sim.lastOutputs = null;
@@ -102,7 +103,7 @@
     Sim.items.forEach(it => {
       const out = outputs[it.key];
       if (!out) return;
-      it.def.pins.forEach((p, i) => {
+      it.pins.forEach((p, i) => {
         if (p.type !== 'out' && p.type !== 'io') return;
         const v = out[p.name];
         if (v === null || v === undefined) return;
@@ -131,7 +132,7 @@
       newStates = {};
       Sim.items.forEach(it => {
         const inp = {};
-        it.def.pins.forEach((p, i) => {
+        it.pins.forEach((p, i) => {
           const v = nets.vals[it.nets[i]];
           inp[p.name] = v === undefined ? null : v;
         });

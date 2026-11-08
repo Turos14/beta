@@ -140,8 +140,8 @@
         return '<div class="field"><label>' + esc(k) + (def.id === 'connector' && k === 'canal' ? ' (même canal = relié)' : '') + '</label>' +
           '<input data-prop="' + esc(k) + '" type="' + type + '" step="any" value="' + esc(v) + '"></div>';
       }).join('') +
-      '<div class="field"><label>pôles</label>' + def.pins.map(p =>
-        '<div class="row"><span style="flex:1">' + esc(p.name) + '</span><span class="muted">' + p.type + ' · ' + connections(p.name) + ' fil(s)</span></div>').join('') + '</div>' +
+      (def.pinChoices ? pinChooser(c, def, connections) : '<div class="field"><label>pôles</label>' + def.pins.map(p =>
+        '<div class="row"><span style="flex:1">' + esc(p.name) + '</span><span class="muted">' + p.type + ' · ' + connections(p.name) + ' fil(s)</span></div>').join('') + '</div>') +
       '<div class="row"><button id="insRot">pivoter 90°</button><button id="insDel" class="danger">supprimer</button></div>' +
       '<p class="muted" style="margin-top:10px">touches : R pivoter · Suppr effacer · Échap annuler</p>';
     const lbl = $('insLabel');
@@ -153,8 +153,63 @@
         App.changed('props');
       };
     });
+    if (def.pinChoices) bindPinChooser(box, c, def);
     $('insRot').onclick = rotateSelection;
     $('insDel').onclick = deleteSelection;
+  }
+
+  // Choix des broches d'une instance (définitions avec pinChoices, ex. carte ESP32)
+  function pinChooser(c, def, connections) {
+    const cur = App.compPins(c, def);
+    const SIDE = { left: 'gauche', right: 'droite' };
+    return '<div class="field"><label>broches de la carte (' + cur.length + '/' + def.pinChoices.length + ')</label>' +
+      '<div class="row" style="margin-bottom:4px"><button class="mini" data-pins="all">toutes</button>' +
+      '<button class="mini" data-pins="none">aucune</button><button class="mini" data-pins="default">par défaut</button></div>' +
+      '<div class="pin-choices">' + def.pinChoices.map(p => {
+        const sel = cur.find(x => x.name === p.name), n = sel ? connections(p.name) : 0;
+        return '<div class="row' + (sel ? '' : ' off') + '" title="' + esc(p.info || '') + '">' +
+          '<label class="chk" style="flex:1"><input type="checkbox" data-pin-on="' + esc(p.name) + '"' + (sel ? ' checked' : '') + '> ' + esc(p.name) +
+          (p.info ? ' <span class="muted">' + esc(p.info) + '</span>' : '') + '</label>' +
+          (n ? '<span class="muted">' + n + ' fil(s)</span>' : '') +
+          '<select data-pin-side="' + esc(p.name) + '"' + (sel ? '' : ' disabled') + '>' + Object.keys(SIDE).map(s =>
+            '<option value="' + s + '"' + (s === (sel ? sel.side : p.side) ? ' selected' : '') + '>' + SIDE[s] + '</option>').join('') + '</select></div>';
+      }).join('') + '</div></div>';
+  }
+
+  function bindPinChooser(box, c, def) {
+    const changed = () => {
+      // l'inspecteur est reconstruit : garder la position de défilement de la liste
+      const top = box.querySelector('.pin-choices').scrollTop;
+      App.pruneWires();
+      App.changed('comp');
+      const list = box.querySelector('.pin-choices');
+      if (list) list.scrollTop = top;
+    };
+    const apply = (list) => {
+      // Ordre de pinChoices ; les fils branchés sur une broche retirée sont supprimés
+      c.pins = def.pinChoices.filter(p => list.some(x => x.name === p.name))
+        .map(p => ({ name: p.name, side: list.find(x => x.name === p.name).side || p.side }));
+      changed();
+    };
+    const cur = () => App.compPins(c, def).map(p => ({ name: p.name, side: p.side }));
+    box.querySelectorAll('[data-pin-on]').forEach(chk => {
+      chk.onchange = () => {
+        const name = chk.dataset.pinOn, list = cur().filter(p => p.name !== name);
+        if (chk.checked) list.push({ name, side: def.pinChoices.find(p => p.name === name).side });
+        apply(list);
+      };
+    });
+    box.querySelectorAll('[data-pin-side]').forEach(s => {
+      s.onchange = () => apply(cur().map(p => p.name === s.dataset.pinSide ? { name: p.name, side: s.value } : p));
+    });
+    box.querySelectorAll('[data-pins]').forEach(b => {
+      b.onclick = () => {
+        const k = b.dataset.pins;
+        if (k === 'default') { delete c.pins; changed(); return; }
+        if (k === 'none' && box.querySelector('[data-pin-on]:checked') && !confirm('Retirer toutes les broches (et leurs fils) ?')) return;
+        apply(k === 'all' ? cur().concat(def.pinChoices.filter(p => !cur().some(x => x.name === p.name))) : []);
+      };
+    });
   }
 
   function inspectWire(box, b, w) {

@@ -319,7 +319,7 @@
       b.components.forEach(c => {
         const def = App.getDef(c.type);
         if (!def) return;
-        const g = App.defGeom(def);
+        const g = App.compGeom(c, def);
         const props = App.compProps(c, def);
         const { grp, parts } = buildShape(def, g, props);
         grp.position.copy(toLocal(c.x + g.w / 2, c.y + g.h / 2));
@@ -335,7 +335,7 @@
         if (def.interactive !== 'none' || def.id === 'connector') dyn.hits.push(grp);
 
         // Pastilles des pôles
-        def.pins.forEach(p => {
+        App.compPins(c, def).forEach(p => {
           const pw = App.pinWorld(c, p.name);
           if (!pw) return;
           const pad = new THREE.Mesh(PAD_GEO, GOLD);

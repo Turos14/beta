@@ -128,6 +128,10 @@ table.pins input, table.pins select { width: 100%; }
 .lib-grid { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); gap: 16px; }
 .lib-editor textarea.logic { min-height: 220px; resize: vertical; tab-size: 2; white-space: pre; }
 .preview-box { border: 1px dashed var(--line-2); border-radius: 4px; height: 200px; }
+.pin-choices { max-height: 260px; overflow-y: auto; border: 1px solid var(--line); padding: 2px 4px; }
+.pin-choices .row { gap: 6px; padding: 1px 0; }
+.pin-choices .row.off { opacity: .55; }
+.pin-choices select { width: auto; padding: 0 2px; }
 .test-out { white-space: pre-wrap; color: var(--fg-dim); background: var(--bg-1); padding: 6px; border-radius: 3px; min-height: 2em; }
 .test-out.err { color: var(--err); }
 
