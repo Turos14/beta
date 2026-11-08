@@ -154,6 +154,26 @@
         lead.rotation.z = Math.PI / 2; lead.position.y = 0.2; grp.add(lead);
         break;
       }
+      case 'mcu': {
+        // Carte ESP32 DevKit : circuit imprimé, module WiFi blindé et son antenne, port USB, LED bleue (GPIO2)
+        const pcb = new THREE.Mesh(new THREE.BoxGeometry(w * 0.9, 0.08, d * 0.94), mat(color));
+        pcb.position.y = 0.04; grp.add(pcb);
+        const shield = new THREE.Mesh(new THREE.BoxGeometry(w * 0.55, 0.12, d * 0.3), mat('#c8c8c8', { metalness: 0.8, roughness: 0.3 }));
+        shield.position.set(0, 0.14, -d * 0.22); grp.add(shield);
+        const antenna = new THREE.Mesh(new THREE.BoxGeometry(w * 0.55, 0.02, d * 0.1), GOLD);
+        antenna.position.set(0, 0.09, -d * 0.42); grp.add(antenna);
+        const usb = new THREE.Mesh(new THREE.BoxGeometry(w * 0.22, 0.12, d * 0.08), mat('#b0b0b0', { metalness: 0.8, roughness: 0.3 }));
+        usb.position.set(0, 0.14, d * 0.45); grp.add(usb);
+        const chip = new THREE.Mesh(new THREE.BoxGeometry(w * 0.18, 0.06, w * 0.18), mat('#111'));
+        chip.position.set(0, 0.11, d * 0.2); grp.add(chip);
+        const lm = mat('#3d8bff', { emissive: new THREE.Color('#3d8bff'), emissiveIntensity: 0 });
+        const led = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.05, 0.1), lm);
+        led.position.set(w * 0.25, 0.11, d * 0.33); grp.add(led);
+        const glow = new THREE.PointLight('#3d8bff', 0, 2);
+        glow.position.set(w * 0.25, 0.4, d * 0.33); grp.add(glow);
+        parts.led = { mat: lm, glow };
+        break;
+      }
       case 'led': {
         const c = props.couleur || color;
         const base = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.08, 20), mat(c, { transparent: true, opacity: 0.8 }));
@@ -329,7 +349,7 @@
       b.components.forEach(c => {
         const def = App.getDef(c.type);
         if (!def) return;
-        const g = App.defGeom(def);
+        const g = App.compGeom(c, def);
         const props = App.compProps(c, def);
         const { grp, parts } = buildShape(def, g, props);
         grp.position.copy(toLocal(c.x + g.w / 2, c.y + g.h / 2));
@@ -345,7 +365,7 @@
         if (def.interactive !== 'none' || def.id === 'connector') dyn.hits.push(grp);
 
         // Pastilles des pôles
-        def.pins.forEach(p => {
+        App.compPins(c, def).forEach(p => {
           const pw = App.pinWorld(c, p.name);
           if (!pw) return;
           const pad = new THREE.Mesh(PAD_GEO, GOLD);

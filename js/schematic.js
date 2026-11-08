@@ -26,7 +26,7 @@
   // Dessine un composant (utilisé aussi pour l'aperçu de l'éditeur de composants)
   App.drawComponent = function (parent, comp, def, opts) {
     opts = opts || {};
-    const g = App.defGeom(def);
+    const g = App.compGeom(comp, def);
     const props = App.compProps(comp, def);
     const st = opts.state || {};
     const ui = opts.ui || { on: false, pressed: false, value: 0.5 };
@@ -76,7 +76,7 @@
     }
 
     // Pôles
-    def.pins.forEach(p => {
+    App.compPins(comp, def).forEach(p => {
       const w = App.pinWorld(comp, p.name);
       if (!w) return;
       if (def.id !== 'connector' && !opts.noPinNames) {
@@ -217,7 +217,7 @@
         angle: this.motorAngle[key],
         pinValue: sim ? (p) => Sim.valueAt(b.id, c.id, p) : null
       });
-      if (focus != null && !def.pins.some(p => Sim.netOf(b.id, c.id, p.name) === focusNet)) g.classList.add('dim');
+      if (focus != null && !App.compPins(c, def).some(p => Sim.netOf(b.id, c.id, p.name) === focusNet)) g.classList.add('dim');
       if (sim && Sim.errors[key]) {
         const t = el('text', { x: c.x, y: c.y - 16, class: 'net-val', fill: '#ff5555' }, comps);
         t.textContent = '⚠ ' + Sim.errors[key];
@@ -347,7 +347,7 @@
   // Valeur 0..1 d'un curseur selon la position du pointeur
   function sliderValue(comp, def, pt) {
     // Le curseur est toujours dessiné horizontalement, centré sur le composant
-    const g = App.defGeom(def);
+    const g = App.compGeom(comp, def);
     const rotated = ((comp.rot || 0) / 90) % 2 === 1;
     const w = (rotated ? g.h : g.w) - 16;
     return (pt.x - (comp.x + g.w / 2) + w / 2) / w;

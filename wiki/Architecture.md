@@ -15,6 +15,7 @@ css/style.css              thème noir / vert, police de VS Code, responsive
 js/library.js              App.DEFAULT_LIBRARY : composants par défaut
 js/model.js                projet, événements, géométrie, sauvegarde
 js/sim.js                  App.Sim : simulateur
+js/arduino.js              App.Arduino : cartes programmables en C++ (ESP32), WiFi simulé
 js/schematic.js            App.SchematicView : rendu / édition SVG, App.drawComponent
 js/library-editor.js       App.LibraryEditor : éditeur de composants
 js/view3d.js               App.View3D : vue 3D (Three.js)
@@ -29,7 +30,7 @@ wiki/                      ce wiki
 
 ```
 three.min.js (r128, cdnjs)  →  OrbitControls.js (jsdelivr)
-library.js → model.js → sim.js → schematic.js → library-editor.js → view3d.js → json-editor.js → app.js
+library.js → model.js → sim.js → arduino.js → schematic.js → library-editor.js → view3d.js → json-editor.js → app.js
 ```
 
 Chaque fichier (sauf `library.js`) est encapsulé dans une IIFE `(function () { … })();` :
@@ -42,6 +43,7 @@ les fonctions internes restent privées, seules les propriétés ajoutées à `A
 |---|---|---|
 | `App` (fonctions racine) | model.js, schematic.js, library-editor.js, app.js | Modèle, géométrie, utilitaires, notifications |
 | `App.Sim` | sim.js | Simulation |
+| `App.Arduino` | arduino.js | Transpileur C++ → JS, exécution des programmes, réseau WiFi |
 | `App.SchematicView` | schematic.js | Classe de vue SVG ; deux instances : `App.schemaView` (édition), `App.simView` (simulation) |
 | `App.LibraryEditor` | library-editor.js | Onglet Composants |
 | `App.View3D` | view3d.js | Onglet Vue 3D |
@@ -130,6 +132,9 @@ Les vues ne gardent aucune copie du projet : elles le relisent entièrement à c
 - **Pas de build** : on ouvre `index.html` via n'importe quel serveur statique ; GitHub Pages suffit.
 - **Programmes des composants en JS** compilés avec `new Function` : le code s'exécute dans
   la page, avec les mêmes droits qu'elle. N'importer que des projets de confiance.
+- **Programmes des cartes en C++** traduits en JavaScript par un transpileur maison
+  (`arduino.js`) plutôt que compilés : pas de serveur ni de WebAssembly, et chaque fonction
+  devient un générateur pour que `delay()` suspende le programme sans bloquer la page.
 - **Rendu SVG reconstruit** à chaque changement : simple et suffisant pour des schémas de
   quelques centaines d'éléments. Les gestionnaires d'événements sont posés sur le `<svg>`
   (délégation via `data-comp`, `data-pin`, `data-wire`), ils survivent donc aux re-rendus.

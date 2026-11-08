@@ -61,6 +61,13 @@ button.install { border-color: var(--fg); }
 .dialog ol { padding-left: 20px; }
 .dialog a { color: var(--accent); }
 .dialog form { text-align: right; margin-top: 10px; }
+.code-dialog { max-width: min(900px, calc(100vw - 16px)); width: 900px; }
+.code-dialog textarea { width: 100%; height: min(60vh, 520px); resize: vertical; tab-size: 2; white-space: pre; margin: 6px 0; }
+.code-dialog .spacer { flex: 1; }
+.code-help { margin-bottom: 8px; color: var(--fg-dim); }
+.code-help p { margin: 6px 0; }
+.serial { white-space: pre-wrap; word-break: break-all; background: var(--bg); border: 1px solid var(--line); padding: 4px 6px;
+  height: 140px; overflow-y: auto; margin: 4px 0; font-size: 12px; }
 .project-name { width: 180px; background: transparent; border-color: transparent; }
 .project-name:hover { border-color: var(--line-2); }
 .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -128,6 +135,11 @@ table.pins input, table.pins select { width: 100%; }
 .lib-grid { display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr); gap: 16px; }
 .lib-editor textarea.logic { min-height: 220px; resize: vertical; tab-size: 2; white-space: pre; }
 .preview-box { border: 1px dashed var(--line-2); border-radius: 4px; height: 200px; }
+.pin-choices { max-height: 260px; overflow-y: auto; border: 1px solid var(--line); padding: 2px 4px; }
+.pin-choices .row { gap: 6px; padding: 1px 0; }
+.pin-choices .row.off { opacity: .55; }
+.pin-choices label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.pin-choices select { width: auto; padding: 0 2px; }
 .test-out { white-space: pre-wrap; color: var(--fg-dim); background: var(--bg-1); padding: 6px; border-radius: 3px; min-height: 2em; }
 .test-out.err { color: var(--err); }
 

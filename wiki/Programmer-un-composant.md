@@ -114,6 +114,7 @@ entre deux exécutions (pratique pour tester une bascule) ; `vider state` le rem
 | `motor` | Carcasse métallique + hélice qui tourne selon `state.speed`. |
 | `probe` | Bloc avec afficheur `state.text` au-dessus. |
 | `connector` | Bloc sombre lumineux (connecteur inter-plaques). |
+| `mcu` | Carte électronique : circuit imprimé, module WiFi blindé avec antenne, port USB, puce et LED bleue (`state.light`). |
 
 ## Exemples
 

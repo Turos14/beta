@@ -4,6 +4,7 @@
 - [Prise en main](Prise-en-main)
 - [Composants de base](Composants-de-base)
 - [Programmer un composant](Programmer-un-composant)
+- [Carte ESP32 (C++, WiFi)](Carte-ESP32)
 - [Exemple : calculateur binaire](Exemple-calculateur-binaire)
 - [Exemple : calculateur en portes](Exemple-calculateur-en-portes-logiques)
 
@@ -16,6 +17,7 @@
 **API**
 - [model.js](API-model)
 - [sim.js](API-sim)
+- [arduino.js](API-arduino)
 - [schematic.js](API-schematic)
 - [library-editor.js](API-library-editor)
 - [view3d.js](API-view3d)

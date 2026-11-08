@@ -63,6 +63,19 @@
   App.findComp = (board, id) => board.components.find(c => c.id === id);
   App.compProps = (comp, def) => Object.assign({}, def ? def.props : {}, comp.props || {});
 
+  // Pôles d'une instance. Une définition avec pinChoices (liste des broches possibles)
+  // laisse chaque instance choisir les siennes : comp.pins = [{ name, side }…], dans
+  // l'ordre de pinChoices. Sans comp.pins, ce sont les pôles par défaut (def.pins).
+  App.compPins = function (comp, def) {
+    if (!def) return [];
+    if (!def.pinChoices || !Array.isArray(comp.pins)) return def.pins;
+    return comp.pins.map(sel => {
+      const ch = def.pinChoices.find(p => p.name === sel.name);
+      return ch && { name: ch.name, side: sel.side || ch.side, type: ch.type };
+    }).filter(Boolean);
+  };
+  App.compGeom = (comp, def) => App.defGeom(def.pinChoices ? Object.assign({}, def, { pins: App.compPins(comp, def) }) : def);
+
   // ---- Géométrie ----
   const SIDE_DIR = { left: [-1, 0], right: [1, 0], top: [0, -1], bottom: [0, 1] };
 
@@ -104,7 +117,7 @@
   App.pinWorld = function (comp, pinName) {
     const def = App.getDef(comp.type);
     if (!def) return null;
-    const g = App.defGeom(def);
+    const g = App.compGeom(comp, def);
     const pin = g.pins.find(p => p.name === pinName);
     if (!pin) return null;
     const [rx, ry] = App.rotVec(pin.x - g.w / 2, pin.y - g.h / 2, comp.rot);
@@ -180,7 +193,7 @@
     board.components.forEach(c => {
       const def = App.getDef(c.type);
       if (!def) return;
-      def.pins.forEach(p => {
+      App.compPins(c, def).forEach(p => {
         const w = App.pinWorld(c, p.name);
         const d = w && Math.hypot(w.x - pt.x, w.y - pt.y);
         if (w && d <= bestD) { bestD = d; found = { c: c.id, p: p.name }; }
@@ -193,7 +206,7 @@
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     board.components.forEach(c => {
       const def = App.getDef(c.type); if (!def) return;
-      const g = App.defGeom(def);
+      const g = App.compGeom(c, def);
       const cx = c.x + g.w / 2, cy = c.y + g.h / 2;
       const r = Math.max(g.w, g.h) / 2 + 10;
       x0 = Math.min(x0, cx - r); y0 = Math.min(y0, cy - r);
@@ -249,9 +262,10 @@
       d.shape3d = d.shape3d || 'chip';
       d.logic = typeof d.logic === 'string' ? d.logic : 'return {};';
     });
-    if (!out.library.some(d => d.id === 'connector')) {
-      out.library.push(App.clone(App.DEFAULT_LIBRARY.find(d => d.id === 'connector')));
-    }
+    // Les composants système (builtin) sont toujours présents
+    App.DEFAULT_LIBRARY.filter(d => d.builtin).forEach(d => {
+      if (!out.library.some(x => x.id === d.id)) out.library.push(App.clone(d));
+    });
     if (!out.schematics.length) out.schematics.push({ id: App.uid('sch'), name: 'Plaque 1', components: [], wires: [] });
     out.schematics.forEach((s, i) => {
       s.id = s.id || App.uid('sch');
@@ -263,6 +277,7 @@
         c.id = c.id || App.uid('c');
         c.x = +c.x || 0; c.y = +c.y || 0; c.rot = +c.rot || 0;
         c.props = c.props && typeof c.props === 'object' ? c.props : {};
+        if (c.pins !== undefined && !Array.isArray(c.pins)) delete c.pins;
       });
       const validEnd = e => e && (typeof e.c === 'string' ? typeof e.p === 'string' : isFinite(e.x) && isFinite(e.y));
       s.wires = s.wires.filter(w => w && validEnd(w.a) && validEnd(w.b));
@@ -341,7 +356,7 @@
       const ok = (e) => {
         if (!App.isPinEnd(e)) return true;
         const c = App.findComp(s, e.c), d = c && App.getDef(c.type);
-        return !!d && d.pins.some(p => p.name === e.p);
+        return !!d && App.compPins(c, d).some(p => p.name === e.p);
       };
       s.wires = s.wires.filter(w => ok(w.a) && ok(w.b));
     });

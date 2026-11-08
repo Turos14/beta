@@ -16,7 +16,8 @@ Simulateur. Objet public : **`App.Sim`**. Le fonctionnement général est décri
 | `netVal` | `{ [netId]: number }` | Tension des nœuds pilotés (un nœud absent est flottant). |
 | `conflicts` | `{ [netId]: true }` | Nœuds pilotés par des tensions différentes. |
 | `errors` | `{ [compKey]: string }` | Dernière erreur d'exécution par instance. |
-| `items` | array | Instances simulées : `{ key, board, comp, def, props, fn, nets }` ; `nets[i]` = nœud du i-ème pôle. |
+| `items` | array | Instances simulées : `{ key, board, comp, def, props, pins, fn, nets, rt? }` ; `pins` = pôles de l'instance (`App.compPins`), `nets[i]` = nœud du i-ème pôle, `rt` = programme d'une carte. |
+| `mcus` | array | Éléments de `items` qui sont des cartes programmables (`rt` défini). |
 | `dirty` | boolean | Nœuds à reconstruire avant le prochain calcul. |
 | `lastOutputs` | object \| null | Sorties du dernier état stable : point de départ du pas suivant (démarrage à chaud). Remis à `null` par `rebuild` et `reset`. |
 | `changed` | boolean | Le dernier `evaluate` ou `interact` a modifié une sortie, un `state` ou un contrôle : la vue doit être redessinée. |
@@ -109,7 +110,7 @@ Convertit une valeur retournée par un programme : `true` → `props.V` (ou 5), 
 Rassemble, pour chaque nœud, les valeurs non nulles des pôles `out` / `io`, retient la plus grande et marque un conflit si elles diffèrent de plus de 1e-6.
 
 ### `loop(now)`
-Corps de la boucle : `t += min(0,1, Δt)`, `evaluate()`, `emit('sim')`, image suivante.
+Corps de la boucle : `t += min(0,1, Δt)`, `rebuild()` si `dirty`, `rt.run(t)` pour chaque carte de `mcus`, `evaluate()`, `emit('sim')`, image suivante.
 
 ---
 
