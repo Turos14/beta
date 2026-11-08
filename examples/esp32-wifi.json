@@ -1,0 +1,900 @@
+{
+  "name": "ESP32 WiFi : bouton → LED",
+  "version": 1,
+  "library": [
+    {
+      "id": "battery",
+      "name": "Pile",
+      "category": "Alimentation",
+      "color": "#d64545",
+      "description": "Source de tension continue. Le pôle + impose V volts, le pôle − impose 0 V.",
+      "pins": [
+        {
+          "name": "+",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "-",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "cylinder",
+      "logic": "return { '+': props.V, '-': 0 };"
+    },
+    {
+      "id": "gnd",
+      "name": "Masse",
+      "category": "Alimentation",
+      "color": "#888888",
+      "w": 60,
+      "description": "Référence 0 V commune du circuit.",
+      "pins": [
+        {
+          "name": "GND",
+          "side": "top",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "box",
+      "logic": "return { GND: 0 };"
+    },
+    {
+      "id": "vcc",
+      "name": "VCC",
+      "category": "Alimentation",
+      "color": "#e67e22",
+      "w": 60,
+      "description": "Rail d'alimentation à tension fixe.",
+      "pins": [
+        {
+          "name": "VCC",
+          "side": "bottom",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "box",
+      "logic": "return { VCC: props.V };"
+    },
+    {
+      "id": "switch",
+      "name": "Interrupteur",
+      "category": "Commandes",
+      "color": "#3fa7d6",
+      "description": "Laisse passer la tension de A vers B lorsqu'il est fermé. Cliquer pour basculer.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "switch",
+      "display": "none",
+      "shape3d": "switch",
+      "logic": "return { B: ui.on ? inp.A : null };"
+    },
+    {
+      "id": "button",
+      "name": "Bouton poussoir",
+      "category": "Commandes",
+      "color": "#2e86c1",
+      "description": "Contact momentané : A est relié à B tant que le bouton est maintenu.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "button",
+      "display": "none",
+      "shape3d": "button",
+      "logic": "return { B: ui.pressed ? inp.A : null };"
+    },
+    {
+      "id": "pot",
+      "name": "Potentiomètre",
+      "category": "Commandes",
+      "color": "#8e44ad",
+      "description": "Diviseur de tension réglable : OUT varie entre GND et VCC selon le curseur.",
+      "pins": [
+        {
+          "name": "VCC",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "GND",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "OUT",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {},
+      "interactive": "slider",
+      "display": "none",
+      "shape3d": "pot",
+      "logic": "const lo = inp.GND || 0, hi = inp.VCC || 0;\nreturn { OUT: lo + (hi - lo) * ui.value };"
+    },
+    {
+      "id": "clock",
+      "name": "Horloge",
+      "category": "Commandes",
+      "color": "#16a085",
+      "description": "Génère un signal carré de fréquence freq (Hz).",
+      "pins": [
+        {
+          "name": "OUT",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "freq": 1,
+        "V": 5
+      },
+      "interactive": "none",
+      "display": "led",
+      "shape3d": "chip",
+      "logic": "const high = Math.floor(t * props.freq * 2) % 2 === 1;\nstate.light = high ? 1 : 0;\nreturn { OUT: high ? props.V : 0 };"
+    },
+    {
+      "id": "resistor",
+      "name": "Résistance",
+      "category": "Passifs",
+      "color": "#c8a165",
+      "description": "Limite le courant. En simulation logique, transmet la tension de A vers B.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "ohms": 220
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "resistor",
+      "logic": "return { B: inp.A };"
+    },
+    {
+      "id": "led",
+      "name": "LED",
+      "category": "Sorties",
+      "color": "#ff3b3b",
+      "description": "Diode électroluminescente : s'allume quand A − K dépasse le seuil.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "K",
+          "side": "right",
+          "type": "in"
+        }
+      ],
+      "props": {
+        "seuil": 1.8,
+        "couleur": "#ff3b3b"
+      },
+      "interactive": "none",
+      "display": "led",
+      "shape3d": "led",
+      "logic": "const v = (inp.A || 0) - (inp.K || 0);\nstate.light = v >= props.seuil ? Math.min(1, v / 5 + 0.3) : 0;\nreturn {};"
+    },
+    {
+      "id": "motor",
+      "name": "Moteur",
+      "category": "Sorties",
+      "color": "#7f8c8d",
+      "description": "Moteur à courant continu : la vitesse dépend de A − B, le signe donne le sens.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "right",
+          "type": "in"
+        }
+      ],
+      "props": {
+        "Vmax": 5
+      },
+      "interactive": "none",
+      "display": "motor",
+      "shape3d": "motor",
+      "logic": "state.speed = ((inp.A || 0) - (inp.B || 0)) / props.Vmax;\nstate.text = Math.round(state.speed * 100) + ' %';\nreturn {};"
+    },
+    {
+      "id": "probe",
+      "name": "Voltmètre",
+      "category": "Mesure",
+      "color": "#f1c40f",
+      "w": 100,
+      "description": "Affiche la tension du nœud connecté à IN (Z = flottant).",
+      "pins": [
+        {
+          "name": "IN",
+          "side": "left",
+          "type": "in"
+        }
+      ],
+      "props": {},
+      "interactive": "none",
+      "display": "value",
+      "shape3d": "probe",
+      "logic": "state.text = inp.IN == null ? 'Z' : inp.IN.toFixed(2) + ' V';\nreturn {};"
+    },
+    {
+      "id": "and",
+      "name": "Porte ET",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est haut si A et B sont hauts.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const h = x => (x || 0) >= props.seuil;\nreturn { Y: h(inp.A) && h(inp.B) ? props.V : 0 };"
+    },
+    {
+      "id": "or",
+      "name": "Porte OU",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est haut si A ou B est haut.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const h = x => (x || 0) >= props.seuil;\nreturn { Y: h(inp.A) || h(inp.B) ? props.V : 0 };"
+    },
+    {
+      "id": "xor",
+      "name": "Porte OU-X",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est haut si exactement une entrée est haute.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "B",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const h = x => (x || 0) >= props.seuil;\nreturn { Y: h(inp.A) !== h(inp.B) ? props.V : 0 };"
+    },
+    {
+      "id": "not",
+      "name": "Inverseur",
+      "category": "Logique",
+      "color": "#27ae60",
+      "description": "Y est l'inverse logique de A.",
+      "pins": [
+        {
+          "name": "A",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Y",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "return { Y: (inp.A || 0) >= props.seuil ? 0 : props.V };"
+    },
+    {
+      "id": "dff",
+      "name": "Bascule D",
+      "category": "Logique",
+      "color": "#1e8449",
+      "description": "Mémorise D sur front montant de CLK. Exemple de composant avec mémoire (state).",
+      "pins": [
+        {
+          "name": "D",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "CLK",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "Q",
+          "side": "right",
+          "type": "out"
+        },
+        {
+          "name": "nQ",
+          "side": "right",
+          "type": "out"
+        }
+      ],
+      "props": {
+        "V": 5,
+        "seuil": 2.5
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "chip",
+      "logic": "const clk = (inp.CLK || 0) >= props.seuil;\nif (clk && !state.prev) state.q = (inp.D || 0) >= props.seuil;\nstate.prev = clk;\nreturn { Q: state.q ? props.V : 0, nQ: state.q ? 0 : props.V };"
+    },
+    {
+      "id": "esp32",
+      "name": "ESP32 DevKit",
+      "category": "Microcontrôleur",
+      "color": "#2c6fbb",
+      "builtin": true,
+      "w": 120,
+      "description": "Carte programmable en C++ (Arduino) avec WiFi intégré. Broches au choix et programme dans l'inspecteur ; les cartes sur le même réseau WiFi communiquent (WiFiUDP). Logique 3,3 V.",
+      "mcu": "esp32",
+      "pinChoices": [
+        {
+          "name": "3V3",
+          "side": "left",
+          "type": "out",
+          "info": "sortie 3,3 V"
+        },
+        {
+          "name": "GND",
+          "side": "left",
+          "type": "out",
+          "info": "masse 0 V"
+        },
+        {
+          "name": "VIN",
+          "side": "left",
+          "type": "in",
+          "info": "entrée 5 V"
+        },
+        {
+          "name": "D36",
+          "side": "left",
+          "type": "in",
+          "info": "VP, entrée seule, ADC"
+        },
+        {
+          "name": "D39",
+          "side": "left",
+          "type": "in",
+          "info": "VN, entrée seule, ADC"
+        },
+        {
+          "name": "D34",
+          "side": "left",
+          "type": "in",
+          "info": "entrée seule, ADC"
+        },
+        {
+          "name": "D35",
+          "side": "left",
+          "type": "in",
+          "info": "entrée seule, ADC"
+        },
+        {
+          "name": "D32",
+          "side": "left",
+          "type": "io",
+          "info": "ADC"
+        },
+        {
+          "name": "D33",
+          "side": "left",
+          "type": "io",
+          "info": "ADC"
+        },
+        {
+          "name": "D25",
+          "side": "left",
+          "type": "io",
+          "info": "DAC1"
+        },
+        {
+          "name": "D26",
+          "side": "left",
+          "type": "io",
+          "info": "DAC2"
+        },
+        {
+          "name": "D27",
+          "side": "left",
+          "type": "io",
+          "info": "ADC"
+        },
+        {
+          "name": "D14",
+          "side": "left",
+          "type": "io",
+          "info": "ADC"
+        },
+        {
+          "name": "D12",
+          "side": "left",
+          "type": "io",
+          "info": "ADC"
+        },
+        {
+          "name": "D13",
+          "side": "left",
+          "type": "io",
+          "info": "ADC"
+        },
+        {
+          "name": "D23",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D22",
+          "side": "right",
+          "type": "io",
+          "info": "SCL"
+        },
+        {
+          "name": "D1",
+          "side": "right",
+          "type": "io",
+          "info": "TX0"
+        },
+        {
+          "name": "D3",
+          "side": "right",
+          "type": "io",
+          "info": "RX0"
+        },
+        {
+          "name": "D21",
+          "side": "right",
+          "type": "io",
+          "info": "SDA"
+        },
+        {
+          "name": "D19",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D18",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D5",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D17",
+          "side": "right",
+          "type": "io",
+          "info": "TX2"
+        },
+        {
+          "name": "D16",
+          "side": "right",
+          "type": "io",
+          "info": "RX2"
+        },
+        {
+          "name": "D4",
+          "side": "right",
+          "type": "io",
+          "info": "ADC"
+        },
+        {
+          "name": "D0",
+          "side": "right",
+          "type": "io",
+          "info": "BOOT"
+        },
+        {
+          "name": "D2",
+          "side": "right",
+          "type": "io",
+          "info": "LED intégrée"
+        },
+        {
+          "name": "D15",
+          "side": "right",
+          "type": "io",
+          "info": "ADC"
+        }
+      ],
+      "pins": [
+        {
+          "name": "3V3",
+          "side": "left",
+          "type": "out"
+        },
+        {
+          "name": "GND",
+          "side": "left",
+          "type": "out"
+        },
+        {
+          "name": "D34",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D35",
+          "side": "left",
+          "type": "in"
+        },
+        {
+          "name": "D32",
+          "side": "left",
+          "type": "io"
+        },
+        {
+          "name": "D33",
+          "side": "left",
+          "type": "io"
+        },
+        {
+          "name": "D25",
+          "side": "left",
+          "type": "io"
+        },
+        {
+          "name": "D26",
+          "side": "left",
+          "type": "io"
+        },
+        {
+          "name": "D23",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D22",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D21",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D19",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D18",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D5",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D4",
+          "side": "right",
+          "type": "io"
+        },
+        {
+          "name": "D2",
+          "side": "right",
+          "type": "io"
+        }
+      ],
+      "props": {},
+      "interactive": "none",
+      "display": "value",
+      "shape3d": "mcu",
+      "code": "// Programme Arduino (C++) — ESP32 DevKit\n// LED intégrée sur GPIO2 (broche D2). Moniteur série : onglet Simulateur.\n\nconst int LED = 2;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(LED, OUTPUT);\n  Serial.println(\"Bonjour depuis l'ESP32 !\");\n}\n\nvoid loop() {\n  digitalWrite(LED, HIGH);\n  delay(500);\n  digitalWrite(LED, LOW);\n  delay(500);\n}\n",
+      "logic": "return {};"
+    },
+    {
+      "id": "connector",
+      "name": "Connecteur",
+      "category": "Liaison",
+      "color": "#00e5ff",
+      "builtin": true,
+      "w": 40,
+      "h": 40,
+      "description": "Relie ce point à tous les connecteurs du même canal, sur n'importe quelle plaque du projet.",
+      "pins": [
+        {
+          "name": "P",
+          "side": "left",
+          "type": "link"
+        }
+      ],
+      "props": {
+        "canal": "A"
+      },
+      "interactive": "none",
+      "display": "none",
+      "shape3d": "connector",
+      "logic": "return {};"
+    }
+  ],
+  "schematics": [
+    {
+      "id": "emetteur",
+      "name": "Émetteur",
+      "components": [
+        {
+          "id": "esp1",
+          "type": "esp32",
+          "x": 100,
+          "y": 60,
+          "rot": 0,
+          "label": "ESP32 émetteur",
+          "props": {},
+          "code": "// Envoie l'état du bouton (D4 → GND) à toutes les cartes du réseau « atelier »\n#include <WiFi.h>\n#include <WiFiUdp.h>\n\nconst char* ssid = \"atelier\";\nconst char* motDePasse = \"12345678\";\nconst int PORT = 4210;\nconst int BOUTON = 4;\n\nWiFiUDP udp;\nint dernier = -1;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(BOUTON, INPUT_PULLUP);\n  WiFi.begin(ssid, motDePasse);\n  Serial.print(\"Connexion\");\n  while (WiFi.status() != WL_CONNECTED) {\n    delay(100);\n    Serial.print(\".\");\n  }\n  Serial.println();\n  Serial.print(\"Connecté, IP : \");\n  Serial.println(WiFi.localIP());\n  udp.begin(PORT);\n}\n\nvoid loop() {\n  int etat = digitalRead(BOUTON);\n  if (etat != dernier) {\n    dernier = etat;\n    String msg = etat == LOW ? \"ON\" : \"OFF\";\n    udp.beginPacket(WiFi.broadcastIP(), PORT);   // à tout le réseau\n    udp.print(msg);\n    udp.endPacket();\n    Serial.println(\"envoyé : \" + msg);\n  }\n  delay(20);\n}\n",
+          "pins": [
+            {
+              "name": "3V3",
+              "side": "left"
+            },
+            {
+              "name": "GND",
+              "side": "left"
+            },
+            {
+              "name": "D4",
+              "side": "right"
+            },
+            {
+              "name": "D2",
+              "side": "right"
+            }
+          ]
+        },
+        {
+          "id": "bt",
+          "type": "button",
+          "x": 300,
+          "y": 70,
+          "rot": 0,
+          "label": "Bouton",
+          "props": {}
+        },
+        {
+          "id": "g1",
+          "type": "gnd",
+          "x": 440,
+          "y": 130,
+          "rot": 0,
+          "label": "",
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "a": {
+            "c": "esp1",
+            "p": "D4"
+          },
+          "b": {
+            "c": "bt",
+            "p": "B"
+          }
+        },
+        {
+          "id": "w2",
+          "a": {
+            "c": "bt",
+            "p": "A"
+          },
+          "b": {
+            "c": "g1",
+            "p": "GND"
+          }
+        }
+      ]
+    },
+    {
+      "id": "recepteur",
+      "name": "Récepteur",
+      "components": [
+        {
+          "id": "esp2",
+          "type": "esp32",
+          "x": 100,
+          "y": 60,
+          "rot": 0,
+          "label": "ESP32 récepteur",
+          "props": {},
+          "code": "// Reçoit « ON » / « OFF » sur le réseau « atelier » et pilote la LED de D18\n#include <WiFi.h>\n#include <WiFiUdp.h>\n\nconst char* ssid = \"atelier\";\nconst char* motDePasse = \"12345678\";\nconst int PORT = 4210;\nconst int LED = 18;\n\nWiFiUDP udp;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(LED, OUTPUT);\n  WiFi.begin(ssid, motDePasse);\n  while (WiFi.status() != WL_CONNECTED) delay(100);\n  Serial.print(\"IP : \");\n  Serial.println(WiFi.localIP());\n  udp.begin(PORT);\n}\n\nvoid loop() {\n  if (udp.parsePacket()) {\n    String msg = udp.readString();\n    Serial.print(\"reçu de \");\n    Serial.print(udp.remoteIP());\n    Serial.println(\" : \" + msg);\n    digitalWrite(LED, msg == \"ON\" ? HIGH : LOW);\n  }\n  delay(10);\n}\n",
+          "pins": [
+            {
+              "name": "3V3",
+              "side": "left"
+            },
+            {
+              "name": "GND",
+              "side": "left"
+            },
+            {
+              "name": "D18",
+              "side": "right"
+            },
+            {
+              "name": "D2",
+              "side": "right"
+            }
+          ]
+        },
+        {
+          "id": "r",
+          "type": "resistor",
+          "x": 300,
+          "y": 50,
+          "rot": 0,
+          "label": "R 220",
+          "props": {}
+        },
+        {
+          "id": "led",
+          "type": "led",
+          "x": 420,
+          "y": 50,
+          "rot": 0,
+          "label": "LED",
+          "props": {}
+        },
+        {
+          "id": "g2",
+          "type": "gnd",
+          "x": 540,
+          "y": 120,
+          "rot": 0,
+          "label": "",
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "w1",
+          "a": {
+            "c": "esp2",
+            "p": "D18"
+          },
+          "b": {
+            "c": "r",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w2",
+          "a": {
+            "c": "r",
+            "p": "B"
+          },
+          "b": {
+            "c": "led",
+            "p": "A"
+          }
+        },
+        {
+          "id": "w3",
+          "a": {
+            "c": "led",
+            "p": "K"
+          },
+          "b": {
+            "c": "g2",
+            "p": "GND"
+          }
+        }
+      ]
+    }
+  ]
+}
