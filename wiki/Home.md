@@ -14,6 +14,7 @@ sous forme de plaques reliées entre elles.
 - [Prise en main](Prise-en-main) — les 5 onglets, raccourcis, plusieurs plaques
 - [Composants de base](Composants-de-base) — tous les composants fournis et leur code
 - [Programmer un composant](Programmer-un-composant) — API `inp / props / state / ui / t`, exemples
+- [Carte ESP32](Carte-ESP32) — carte programmable en C++ Arduino avec WiFi, broches au choix
 - [Exemple : calculateur binaire](Exemple-calculateur-binaire) — projet prêt à importer : + − × ÷ sur 4 bits, 3 plaques
 - [Exemple : calculateur en portes logiques](Exemple-calculateur-en-portes-logiques) — le même avec seulement les composants de base : 261 portes sur 9 plaques
 
@@ -24,6 +25,7 @@ sous forme de plaques reliées entre elles.
 - Référence de l'API, fichier par fichier :
   - [model.js](API-model) — projet, géométrie, sauvegarde
   - [sim.js](API-sim) — simulateur
+  - [arduino.js](API-arduino) — cartes programmables en C++ et WiFi simulé
   - [schematic.js](API-schematic) — rendu et édition SVG
   - [library-editor.js](API-library-editor) — éditeur de composants
   - [view3d.js](API-view3d) — vue 3D

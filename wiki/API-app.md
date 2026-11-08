@@ -44,6 +44,9 @@ Clic : `schemaView.addAt(type)` au centre. Glisser : le type passe dans `dataTra
 | `renderInspector()` | Selon la sélection : `inspectComp`, `inspectWire`, ou fiche de la plaque (nom modifiable, statistiques, liaisons inter-plaques par canal, avec la mention « non relié » si le canal n'existe que sur une plaque). |
 | `inspectComp(box, b, c, def)` | Fiche d'une instance : description, étiquette, un champ par clé de `def.props` (type `color` pour `couleur`, `number` si la valeur par défaut est un nombre, sinon texte), pôles avec type et nombre de fils, boutons pivoter / supprimer. Les saisies modifient `c.label` / `c.props` et émettent `change('label' \| 'props')` sans reconstruire la fiche. |
 | `inspectWire(box, b, w)` | Fiche d'un fil : extrémités (`Composant.pôle` ou `point libre (x, y)`), couleur (sélecteur libre, bouton `défaut` et pastilles de `App.WIRE_COLORS`), tracé (nombre de points, `+ point de passage` au milieu du tracé, `tracé auto` pour tout effacer), aide sur les gestes, suppression. |
+| `pinChooser(c, def, connections)` / `bindPinChooser(box, c, def)` | Définitions avec `pinChoices` : une case à cocher et un côté (gauche / droite) par broche possible, boutons `toutes` / `aucune` / `par défaut`. Écrit `c.pins` (dans l'ordre de `pinChoices`), supprime les fils des broches retirées (`App.pruneWires`) et émet `change('comp')` en gardant le défilement de la liste. |
+| `mcuSection(c, def)` | Cartes (`def.mcu`) : bouton `✎ éditer le programme` et état du programme (`✓ N lignes` ou `⚠ erreur`, via `App.Arduino.check`). |
+| `openCode(b, c, def)` | Ouvre la fenêtre `#codeDialog` : éditeur du programme C++ (tabulation = 2 espaces), liste d'exemples (`App.Arduino.EXAMPLES`), vérification automatique 400 ms après la frappe et bouton `vérifier`. `enregistrer` écrit `c.code` et émet `change('comp')` : la carte redémarre. Échap demande confirmation si le programme a changé. |
 | `deleteSelection()` | Supprime le composant (avec ses fils) ou le fil sélectionné, puis vide la sélection. |
 | `rotateSelection()` | Pivote le composant sélectionné de +90°. |
 
@@ -52,7 +55,8 @@ Clic : `schemaView.addAt(type)` au centre. Glisser : le type passe dans `dataTra
 | Fonction | Rôle |
 |---|---|
 | `renderSimPanel()` | Construit, pour **toutes** les plaques, une ligne par composant interactif ou afficheur : bouton ON/OFF (`switch`), bouton à maintenir (`button`), curseur (`slider`), et une zone de lecture. Puis la zone *Erreurs* et la légende des couleurs. |
-| `updateSimPanel()` | Mise à jour **sur place** (sans reconstruire, pour ne pas interrompre un glisser) : état des boutons, position des curseurs (sauf celui qu'on manipule), lectures (`state.text`, ou allumée / éteinte), erreurs, statut `en cours · t = …`. |
+| `renderSimPanel()` (cartes) | S'il y a des cartes programmables : zone *Réseaux WiFi*, puis un **moniteur série** par carte (`<pre data-serial>`), un champ d'envoi (Entrée : le texte suivi de `\n` est ajouté à `rt.rx`, lu par `Serial`) et un bouton `effacer`. |
+| `updateSimPanel()` | Mise à jour **sur place** (sans reconstruire, pour ne pas interrompre un glisser) : état des boutons, position des curseurs (sauf celui qu'on manipule), lectures (`state.text`, ou allumée / éteinte), moniteurs série (défilement automatique si on est en bas), réseaux WiFi (`App.Arduino.networks()`), erreurs, statut `en cours · t = …`. |
 | `updateSimButtons()` | Libellé et style des boutons `▶ simuler` / `■ arrêter` (simulateur et 3D). |
 
 ### Import / export

@@ -86,10 +86,22 @@ déclenche pas plusieurs fois.
 ## 3. Boucle temporelle
 
 - `Sim.start()` lance une boucle `requestAnimationFrame`. À chaque image : `t += dt`
-  (`dt` plafonné à 0,1 s), puis `evaluate()`, puis l'événement `sim`.
+  (`dt` plafonné à 0,1 s), reconstruction des nœuds si besoin, avancée de chaque **carte
+  programmable** jusqu'à `t` (`rt.run(t)`, voir [API arduino.js](API-arduino)), puis
+  `evaluate()`, puis l'événement `sim`.
 - `Sim.stop()` arrête la boucle. Simulation arrêtée, toute modification du projet ou
   interaction relance quand même un `evaluate()` ponctuel : la vue reste cohérente.
-- `Sim.reset()` remet `t = 0` et vide les états, les contrôles, les tensions et les erreurs.
+- `Sim.reset()` remet `t = 0` et vide les états, les contrôles, les tensions et les erreurs ;
+  les programmes des cartes redémarrent.
+
+### Cartes programmables
+
+Pour une instance dont la définition a `mcu`, `rebuild` remplace la fonction `logic` par
+celle du programme C++ (`App.Arduino.attach`) : elle renvoie les sorties actuelles de la carte
+(`3V3`, `GND` et les broches en `OUTPUT`) sans faire avancer le programme. Le programme n'avance
+que dans la boucle, une fois par image, en lisant les tensions de l'état stable précédent.
+Un `rebuild` (fil ajouté, composant déplacé…) garde le programme en cours tant que son code
+n'a pas changé.
 
 ## 4. Interactions — `Sim.interact()`
 

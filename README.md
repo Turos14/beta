@@ -31,6 +31,11 @@ La vue 3D charge Three.js depuis un CDN (connexion internet requise).
 | **Simulateur** | Tensions en direct sur les fils, interrupteurs, boutons, potentiomètres ; toutes les plaques sont simulées ensemble. |
 | **JSON** | Voir / modifier le projet en JSON (validation en direct, `Ctrl+S` pour appliquer). |
 
+**Carte ESP32** (catégorie *Microcontrôleur*) : programmable en **C++ Arduino** (setup / loop, `delay`,
+`Serial`, `analogRead`…), avec **WiFi simulé** : les cartes sur le même SSID s'échangent des paquets
+`WiFiUDP`, quelle que soit leur plaque. Broches au choix sur chaque carte (inspecteur), moniteur série
+dans le simulateur. Voir le [wiki](https://github.com/Turos14/beta/wiki/Carte-ESP32).
+
 Plusieurs schémas par projet : liste « plaques » à gauche. Pour relier deux plaques,
 placer un **Connecteur** sur chacune avec le même **canal** (ex. `PWR`).
 
@@ -42,6 +47,7 @@ Le projet est aussi sauvegardé automatiquement dans le navigateur.
 | Fichier | Contenu |
 |---|---|
 | [`examples/calculateur-binaire.json`](examples/calculateur-binaire.json) | Calculateur binaire 4 bits (+ − × ÷) sur 3 plaques ; voir le [wiki](https://github.com/Turos14/beta/wiki/Exemple-calculateur-binaire). |
+| [`examples/esp32-wifi.json`](examples/esp32-wifi.json) | Deux ESP32 sur deux plaques : un bouton sur l'une allume une LED sur l'autre, en WiFi (UDP). |
 | [`examples/calculateur-binaire-portes.json`](examples/calculateur-binaire-portes.json) | Le même, avec seulement les composants de base : 261 portes logiques sur 9 plaques ; voir le [wiki](https://github.com/Turos14/beta/wiki/Exemple-calculateur-en-portes-logiques). |
 
 À ouvrir avec le bouton `importer`.
@@ -81,6 +87,7 @@ css/style.css
 js/library.js         composants par défaut
 js/model.js           projet, géométrie, sauvegarde
 js/sim.js             simulateur
+js/arduino.js         cartes programmables en C++ (ESP32), WiFi simulé
 js/schematic.js       éditeur / vue SVG
 js/library-editor.js  éditeur de composants
 js/view3d.js          vue 3D (Three.js)

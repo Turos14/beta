@@ -29,6 +29,7 @@ Elle est **copiée dans chaque projet** (`project.library`) : tous ces composant
 | [Inverseur](#not) | `not` | Logique | A, Y | none | none | chip |
 | [Bascule D](#dff) | `dff` | Logique | D, CLK, Q, nQ | none | none | chip |
 | [Connecteur](#connector) | `connector` | Liaison | P | none | none | connector |
+| [ESP32 DevKit](#esp32) | `esp32` | Microcontrôleur | au choix (16 par défaut) | none | value | mcu |
 
 ---
 
@@ -414,3 +415,21 @@ return {};
 **Fonctionnement** : n'a pas de programme utile. Son pôle `P` est de type `link` : lors de la construction des nœuds, le simulateur fusionne tous les pôles `link` dont la propriété `canal` est identique, **sur toutes les plaques** (voir [Simulateur](Simulateur)). Le schéma affiche le nom du canal dans le composant, la vue 3D trace un câble entre les plaques.
 
 Composant système (`builtin: true`) : pôles et programme verrouillés dans l'éditeur, mais on peut le dupliquer.
+
+---
+
+## Microcontrôleur
+
+<a id="esp32"></a>
+### ESP32 DevKit — `esp32`
+
+Carte programmable en C++ (Arduino) avec WiFi intégré. Composant système (`builtin: true`),
+ajouté automatiquement aux projets qui ne l'ont pas.
+
+- **Broches** : choisies sur chaque carte posée parmi `pinChoices` (3V3, GND, VIN, D0…D39),
+  enregistrées dans `comp.pins` ; 16 par défaut.
+- **Programme** : C++ propre à chaque carte (`comp.code`), `code` de la définition par défaut
+  (clignotement de la LED intégrée sur D2). Le champ `logic` n'est pas utilisé.
+- **Interaction** : `none` · **Affichage** : `value` (état WiFi : `WiFi 192.168.1.100`) · **Forme 3D** : `mcu` · **Couleur** : `#2c6fbb`
+
+Guide complet : [Carte ESP32](Carte-ESP32).

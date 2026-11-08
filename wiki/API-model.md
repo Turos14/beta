@@ -82,6 +82,14 @@ Paramètres effectifs : `def.props` surchargés par `comp.props` (nouvel objet).
 
 ## Géométrie
 
+### `App.compPins(comp, def) → pins[]`
+Pôles d'une **instance**. Sans `def.pinChoices` (ou sans `comp.pins`) : `def.pins`. Sinon, les
+entrées de `comp.pins` retrouvées dans `pinChoices`, avec le côté choisi (`{ name, side, type }`).
+À utiliser partout où l'on parcourt les pôles d'un composant posé.
+
+### `App.compGeom(comp, def) → { w, h, pins[] }`
+`App.defGeom` appliqué aux pôles de l'instance (`App.compPins`).
+
 ### `App.defGeom(def) → { w, h, pins[] }`
 Taille d'un composant et position de ses pôles, **avant rotation**, dans le repère du composant (origine en haut à gauche).
 
@@ -147,7 +155,7 @@ Rectangle englobant de tous les composants d'une plaque (avec une marge qui couv
 Relit et parse le projet sauvegardé, `null` s'il est absent ou illisible.
 
 ### `App.normalizeProject(p) → projet`
-Valide et complète un projet brut (import, JSON édité, sauvegarde). Règles détaillées : [Format du projet JSON](Format-du-projet-JSON#validation-au-chargement). **Modifie l'objet reçu** : passer une copie (`App.clone`) si on veut juste valider. Lève une `Error` au message lisible si le projet est invalide.
+Valide et complète un projet brut (import, JSON édité, sauvegarde) ; ajoute les composants système (`builtin`) manquants. Règles détaillées : [Format du projet JSON](Format-du-projet-JSON#validation-au-chargement). **Modifie l'objet reçu** : passer une copie (`App.clone`) si on veut juste valider. Lève une `Error` au message lisible si le projet est invalide.
 
 ### `App.setProject(p, keepBoard)`
 Remplace le projet courant par `normalizeProject(p)`. Si `keepBoard` est vrai et que la plaque courante existe encore, elle reste sélectionnée, sinon on passe à la première. Vide la sélection, émet `project` puis `change('project')`.

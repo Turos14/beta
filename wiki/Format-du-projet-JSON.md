@@ -59,8 +59,12 @@ C'est le format du bouton `télécharger`, de l'onglet JSON et de la sauvegarde 
 | `logic` | string | corps de fonction JS | `"return {};"` |
 | `w`, `h` | number | taille en px sur le schéma | calculée |
 | `builtin` | boolean | composant système verrouillé | absent |
+| `pinChoices` | array | broches possibles `{ name, side, type, info? }` ; chaque instance choisit les siennes (`comp.pins`), `pins` = choix par défaut | absent |
+| `mcu` | string | carte programmable en C++ (`"esp32"`) : `logic` est remplacé par le programme de l'instance | absent |
+| `code` | string | programme C++ par défaut des instances (avec `mcu`) | absent |
 
-Si la bibliothèque ne contient pas de composant `connector`, il est ajouté automatiquement.
+Les composants système (`builtin`) absents de la bibliothèque — `connector` et `esp32` — y sont
+ajoutés automatiquement.
 
 ## Plaque (`schematics[]`)
 
@@ -97,6 +101,8 @@ Si la bibliothèque ne contient pas de composant `connector`, il est ajouté aut
 | `rot` | number | Rotation horaire : `0`, `90`, `180`, `270`. | `0` |
 | `label` | string | Étiquette affichée (sinon le nom de la définition). | — |
 | `props` | object | Surcharge des `props` de la définition. | `{}` |
+| `pins` | `[{ name, side }]` | Si la définition a `pinChoices` : broches présentes sur cette instance (dans l'ordre de `pinChoices`, côté `left` / `right`). Absent = `pins` de la définition. Les noms inconnus sont ignorés. | absent |
+| `code` | string | Si la définition a `mcu` : programme C++ de cette instance. Absent = `code` de la définition. | absent |
 
 Une instance dont le `type` n'existe pas dans la bibliothèque est affichée `? type` en
 rouge sur le schéma et ignorée par la simulation et la 3D.
