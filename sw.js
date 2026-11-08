@@ -4,10 +4,10 @@
  *    copie en cache en secours ;
  *  - Three.js (CDN, version figée) : cache d'abord.
  */
-const CACHE = 'circuit3d-v1';
+const CACHE = 'circuit3d-v2';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
-  'js/library.js', 'js/model.js', 'js/sim.js', 'js/schematic.js', 'js/library-editor.js',
+  'js/library.js', 'js/model.js', 'js/sim.js', 'js/arduino.js', 'js/schematic.js', 'js/library-editor.js',
   'js/view3d.js', 'js/json-editor.js', 'js/app.js',
   'icons/logo.svg', 'icons/favicon-32.png', 'icons/apple-touch-icon.png',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'

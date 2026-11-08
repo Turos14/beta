@@ -10,6 +10,9 @@
  *  - display  : none | led | value | motor           (retour visuel)
  *  - shape3d  : forme dans la vue 3D
  *  - w, h     : taille imposée sur le schéma (facultatif)
+ *  - pinChoices : (facultatif) broches possibles ; chaque instance choisit les siennes (comp.pins)
+ *  - mcu, code : carte programmable en C++ (voir arduino.js) et programme par défaut ;
+ *               chaque instance a son programme dans comp.code
  *  - logic    : corps d'une fonction JS (inp, props, state, ui, t) => { pin: valeur }
  *               inp   : valeurs (V) des nœuds connectés à chaque pôle (null = flottant)
  *               state : mémoire persistante ; state.light (0..1), state.text, state.speed
@@ -130,6 +133,46 @@ App.DEFAULT_LIBRARY = [
     pins: [{ name: 'D', side: 'left', type: 'in' }, { name: 'CLK', side: 'left', type: 'in' }, { name: 'Q', side: 'right', type: 'out' }, { name: 'nQ', side: 'right', type: 'out' }],
     props: { V: 5, seuil: 2.5 }, interactive: 'none', display: 'none', shape3d: 'chip',
     logic: 'const clk = (inp.CLK || 0) >= props.seuil;\nif (clk && !state.prev) state.q = (inp.D || 0) >= props.seuil;\nstate.prev = clk;\nreturn { Q: state.q ? props.V : 0, nQ: state.q ? 0 : props.V };'
+  },
+  {
+    id: 'esp32', name: 'ESP32 DevKit', category: 'Microcontrôleur', color: '#2c6fbb', builtin: true, w: 120,
+    description: 'Carte programmable en C++ (Arduino) avec WiFi intégré. Broches au choix et programme dans l\'inspecteur ; les cartes sur le même réseau WiFi communiquent (WiFiUDP). Logique 3,3 V.',
+    mcu: 'esp32',
+    pinChoices: [
+      { name: '3V3', side: 'left', type: 'out', info: 'sortie 3,3 V' },
+      { name: 'GND', side: 'left', type: 'out', info: 'masse 0 V' },
+      { name: 'VIN', side: 'left', type: 'in', info: 'entrée 5 V' },
+      { name: 'D36', side: 'left', type: 'in', info: 'VP, entrée seule, ADC' },
+      { name: 'D39', side: 'left', type: 'in', info: 'VN, entrée seule, ADC' },
+      { name: 'D34', side: 'left', type: 'in', info: 'entrée seule, ADC' },
+      { name: 'D35', side: 'left', type: 'in', info: 'entrée seule, ADC' },
+      { name: 'D32', side: 'left', type: 'io', info: 'ADC' },
+      { name: 'D33', side: 'left', type: 'io', info: 'ADC' },
+      { name: 'D25', side: 'left', type: 'io', info: 'DAC1' },
+      { name: 'D26', side: 'left', type: 'io', info: 'DAC2' },
+      { name: 'D27', side: 'left', type: 'io', info: 'ADC' },
+      { name: 'D14', side: 'left', type: 'io', info: 'ADC' },
+      { name: 'D12', side: 'left', type: 'io', info: 'ADC' },
+      { name: 'D13', side: 'left', type: 'io', info: 'ADC' },
+      { name: 'D23', side: 'right', type: 'io' },
+      { name: 'D22', side: 'right', type: 'io', info: 'SCL' },
+      { name: 'D1', side: 'right', type: 'io', info: 'TX0' },
+      { name: 'D3', side: 'right', type: 'io', info: 'RX0' },
+      { name: 'D21', side: 'right', type: 'io', info: 'SDA' },
+      { name: 'D19', side: 'right', type: 'io' },
+      { name: 'D18', side: 'right', type: 'io' },
+      { name: 'D5', side: 'right', type: 'io' },
+      { name: 'D17', side: 'right', type: 'io', info: 'TX2' },
+      { name: 'D16', side: 'right', type: 'io', info: 'RX2' },
+      { name: 'D4', side: 'right', type: 'io', info: 'ADC' },
+      { name: 'D0', side: 'right', type: 'io', info: 'BOOT' },
+      { name: 'D2', side: 'right', type: 'io', info: 'LED intégrée' },
+      { name: 'D15', side: 'right', type: 'io', info: 'ADC' }
+    ],
+    pins: [{ name: '3V3', side: 'left', type: 'out' }, { name: 'GND', side: 'left', type: 'out' }, { name: 'D34', side: 'left', type: 'in' }, { name: 'D35', side: 'left', type: 'in' }, { name: 'D32', side: 'left', type: 'io' }, { name: 'D33', side: 'left', type: 'io' }, { name: 'D25', side: 'left', type: 'io' }, { name: 'D26', side: 'left', type: 'io' }, { name: 'D23', side: 'right', type: 'io' }, { name: 'D22', side: 'right', type: 'io' }, { name: 'D21', side: 'right', type: 'io' }, { name: 'D19', side: 'right', type: 'io' }, { name: 'D18', side: 'right', type: 'io' }, { name: 'D5', side: 'right', type: 'io' }, { name: 'D4', side: 'right', type: 'io' }, { name: 'D2', side: 'right', type: 'io' }],
+    props: {}, interactive: 'none', display: 'value', shape3d: 'mcu',
+    code: "// Programme Arduino (C++) — ESP32 DevKit\n// LED intégrée sur GPIO2 (broche D2). Moniteur série : onglet Simulateur.\n\nconst int LED = 2;\n\nvoid setup() {\n  Serial.begin(115200);\n  pinMode(LED, OUTPUT);\n  Serial.println(\"Bonjour depuis l'ESP32 !\");\n}\n\nvoid loop() {\n  digitalWrite(LED, HIGH);\n  delay(500);\n  digitalWrite(LED, LOW);\n  delay(500);\n}\n",
+    logic: 'return {};'
   },
   {
     id: 'connector', name: 'Connecteur', category: 'Liaison', color: '#00e5ff', builtin: true, w: 40, h: 40,

@@ -25,6 +25,7 @@
     conflicts: {},  // id de nœud -> true
     errors: {},     // clé composant -> message d'erreur
     lastOutputs: null, // sorties du dernier état stable (point de départ du pas suivant)
+    mcus: [],       // cartes programmables (ESP32) : éléments de items ayant un programme rt
     changed: true,  // le dernier pas a modifié des sorties, des états ou un contrôle (à redessiner)
     dirty: true
   };
@@ -75,7 +76,9 @@
           if (p.type === 'link') union(k, 'canal:' + String(props.canal));
         });
         if (def.id !== 'connector') {
-          Sim.items.push({ key: compKey(s.id, c.id), board: s, comp: c, def, props, pins, fn: Sim.compile(def) });
+          const it = { key: compKey(s.id, c.id), board: s, comp: c, def, props, pins, fn: Sim.compile(def) };
+          if (def.mcu && App.Arduino) App.Arduino.attach(it);
+          Sim.items.push(it);
         }
       });
       s.wires.forEach(w => union(endKey(s.id, w.a), endKey(s.id, w.b)));
@@ -86,6 +89,7 @@
     Sim.items.forEach(it => { it.nets = it.pins.map(p => Sim.pinNet[pinKey(it.board.id, it.comp.id, p.name)]); });
     Sim.wireNet = {};
     App.project.schematics.forEach(s => s.wires.forEach(w => { Sim.wireNet[s.id + '/' + w.id] = find(endKey(s.id, w.a)); }));
+    Sim.mcus = App.Arduino ? App.Arduino.sync(Sim.items) : [];
     Sim.lastOutputs = null;
     Sim.dirty = false;
   };
@@ -186,6 +190,9 @@
     const dt = Math.min(0.1, (now - last) / 1000);
     last = now;
     Sim.t += dt;
+    if (Sim.dirty) Sim.rebuild();
+    // les cartes programmables avancent jusqu'à t, puis le circuit se stabilise avec leurs sorties
+    Sim.mcus.forEach(it => it.rt.run(Sim.t));
     Sim.evaluate();
     App.emit('sim');
     raf = requestAnimationFrame(loop);
@@ -207,6 +214,7 @@
   Sim.toggle = () => (Sim.running ? Sim.stop() : Sim.start());
   Sim.reset = function () {
     Sim.t = 0; Sim.states = {}; Sim.ui = {}; Sim.netVal = {}; Sim.errors = {}; Sim.lastOutputs = null;
+    if (App.Arduino) App.Arduino.reset();   // les programmes redémarrent
     Sim.dirty = true;
     if (!Sim.running) Sim.evaluate();
     Sim.changed = true;
