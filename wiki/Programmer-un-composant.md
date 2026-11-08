@@ -106,6 +106,7 @@ entre deux exécutions (pratique pour tester une bascule) ; `vider state` le rem
 | `box` | Bloc plein de la couleur du composant. |
 | `cylinder` | Cylindre couché avec borne dorée (pile). |
 | `resistor` | Corps beige à anneaux de couleur sur fil doré. |
+| `diode` | Petit cylindre de la couleur du composant, anneau argenté côté cathode (droite), sur fil doré. |
 | `led` | Dôme translucide qui s'illumine (+ lumière ponctuelle). |
 | `switch` | Socle + levier qui bascule selon `ui.on`. |
 | `button` | Socle + capuchon qui s'enfonce selon `ui.pressed`. |
