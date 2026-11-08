@@ -127,6 +127,33 @@
 
   <div id="toast" class="toast"></div>
 
+  <!-- Programme C++ d'une carte (ESP32) -->
+  <dialog id="codeDialog" class="dialog code-dialog">
+    <h3 id="codeTitle">Programme C++</h3>
+    <div class="row code-bar">
+      <label>exemple <select id="codeExample"></select></label>
+      <span class="spacer"></span>
+      <span id="codeStatus" class="status"></span>
+    </div>
+    <textarea id="codeEditor" class="code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <details class="code-help">
+      <summary>ce qui est pris en charge</summary>
+      <p><b>Arduino</b> : setup / loop, pinMode (INPUT, OUTPUT, INPUT_PULLUP, INPUT_PULLDOWN), digitalRead / Write, analogRead (0…4095),
+        analogWrite / dacWrite / ledcWrite (tension moyenne), millis, micros, delay, map, constrain, random…
+        <b>Serial</b> : print, println, printf, available, read, readString(Until). <b>String</b>, tableaux, enum, #define, static.</p>
+      <p><b>WiFi</b> : begin, status, localIP, config, softAP, disconnect, RSSI. <b>WiFiUDP</b> : begin, beginPacket, print, endPacket,
+        parsePacket, read, readString, remoteIP, remotePort. Les cartes sur le même SSID (même mot de passe) se voient, toutes plaques confondues ;
+        adresses 192.168.1.100, .101… (192.168.4.x derrière un softAP), diffusion vers x.x.x.255.</p>
+      <p>Logique 3,3 V : HIGH ≥ 1,65 V. Broches D34 à D39 : entrées seules. Pas de classes, pointeurs ni interruptions.</p>
+    </details>
+    <div class="row">
+      <button id="codeCheck">vérifier</button>
+      <span class="spacer"></span>
+      <button id="codeCancel">annuler</button>
+      <button id="codeSave" class="active">enregistrer</button>
+    </div>
+  </dialog>
+
   <dialog id="installDialog" class="dialog">
     <h3><img src="icons/logo.svg" alt="" class="logo"> Installer Circuit 3D</h3>
     <p>L'application s'installe comme une app classique (icône, fenêtre dédiée) et fonctionne <b>hors ligne</b>.</p>

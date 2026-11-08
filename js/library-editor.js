@@ -8,7 +8,7 @@
   const TYPES = { in: 'entrée', out: 'sortie', io: 'entrée/sortie', link: 'liaison' };
   const INTERACTIVE = { none: 'aucun', switch: 'interrupteur', button: 'bouton', slider: 'curseur' };
   const DISPLAY = { none: 'aucun', led: 'voyant', value: 'valeur (state.text)', motor: 'rotation (state.speed)' };
-  const SHAPES = ['chip', 'box', 'cylinder', 'resistor', 'led', 'switch', 'button', 'pot', 'motor', 'probe', 'connector'];
+  const SHAPES = ['chip', 'box', 'cylinder', 'resistor', 'led', 'switch', 'button', 'pot', 'motor', 'probe', 'connector', 'mcu'];
 
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const opts = (map, cur) => Object.keys(map).map(k => '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + esc(map[k]) + '</option>').join('');
@@ -98,9 +98,10 @@
         '<div class="field"><label>paramètres par défaut (JSON) — accessibles via props</label><textarea id="propsJson" class="code" rows="3">' + esc(JSON.stringify(d.props)) + '</textarea><div id="propsErr" class="muted"></div></div>' +
       '</div><div>' +
         '<div class="field"><label>aperçu</label><svg id="libPreview" class="preview-box schema-svg"></svg></div>' +
-        '<div class="field"><label>programme — function (inp, props, state, ui, t) { … }</label>' +
+        (d.mcu ? '<p class="muted">Carte programmable : son programme C++ est propre à chaque carte posée (schéma → inspecteur → « éditer le programme »). Les broches se choisissent aussi dans l\'inspecteur.</p>' : '') +
+        '<div class="field"' + (d.mcu ? ' style="display:none"' : '') + '><label>programme — function (inp, props, state, ui, t) { … }</label>' +
           '<textarea id="logicCode" class="code logic"' + (locked ? ' disabled' : '') + '>' + esc(d.logic) + '</textarea></div>' +
-        '<div class="field"><label>tester</label>' +
+        '<div class="field"' + (d.mcu ? ' style="display:none"' : '') + '><label>tester</label>' +
           '<div class="row" style="flex-wrap:wrap">' +
             inPins.map(p => '<span>' + esc(p.name) + ' <input class="test-in" data-p="' + esc(p.name) + '" style="width:60px" placeholder="Z"></span>').join('') +
             (d.interactive === 'switch' ? '<label><input type="checkbox" id="tUiOn"> on</label>' : '') +

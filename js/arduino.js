@@ -248,7 +248,7 @@
         while (isOp(m, '[')) { const c = match(m); dims.push(raw(m + 1, c) || '0'); m = nx(c); }
         let init = dims.length ? '__arr([' + dims.join(', ') + '], () => ' + defaultValue(info) + ')' : defaultValue(info);
         if (isOp(m, '=')) { const e = exprEnd(nx(m)); init = raw(nx(m), e).replace(/\{/g, '[').replace(/\}/g, ']'); m = e; }
-        prelude += 'let ' + js + ' = ' + init + ';\n';
+        prelude += 'let ' + js + ' = ' + init + '; ';   // même ligne : les numéros de ligne restent justes
         scopes[scopes.length - 1][name] = { kind: info.kind, js };
         if (!isOp(m, ',')) break;
         k = nx(m);
@@ -666,12 +666,11 @@
     this.rand = prng(1);
     this.out = { '3V3': VCC, GND: 0 };
     try {
-      const js = transpile(code);
+      const js = this.js = transpile(code);
       const api = this.api();
       const names = Object.keys(api);
       const factory = new Function(names.join(','), 'return function* () {\n' + js +
         '\nreturn { setup: typeof setup === "function" ? setup : null, loop: typeof loop === "function" ? loop : null };\n};');
-      this.js = js;
       this.gen = this.driver(factory.apply(null, names.map(k => api[k])));
     } catch (e) {
       this.fail(e, true);
@@ -679,9 +678,38 @@
   }
   Ard.Runtime = Runtime;
 
+  // Ligne d'une erreur de syntaxe du code généré : new Function ne la donne pas, un
+  // <script> (jamais exécuté) la donne dans l'événement error de la page.
+  Ard.syntaxLine = function (js) {
+    if (typeof document === 'undefined') return 0;
+    let line = 0;
+    const h = (ev) => { line = ev.lineno; ev.preventDefault(); };
+    window.addEventListener('error', h);
+    const el = document.createElement('script');
+    el.textContent = 'void function* () {\n' + js + '\n};';
+    document.head.appendChild(el);
+    el.remove();
+    window.removeEventListener('error', h);
+    return line > 1 ? line - 1 : 0;
+  };
+  const syntaxMsg = (e, js) => {
+    const line = e instanceof SyntaxError && js ? Ard.syntaxLine(js) : 0;
+    return 'erreur de syntaxe' + (line ? ' (ligne ' + line + ')' : '') + ' : ' + e.message;
+  };
+
+  // Messages d'erreur JavaScript les plus courants, en termes de C++
+  const frMsg = m => m
+    .replace(/^(\w+) is not defined$/, '« $1 » n\'est pas déclaré')
+    .replace(/^(?:\S+\.)?(\w+) is not a function$/, '« $1 » n\'est pas une fonction connue')
+    .replace(/^Cannot read propert(?:y|ies) of (undefined|null) \(reading '(.+)'\)$/, 'valeur indéfinie (lecture de « $2 »)')
+    .replace(/^Cannot set propert(?:y|ies) of (undefined|null) \(setting '(.+)'\)$/, 'valeur indéfinie (écriture de « $2 »)')
+    .replace(/^Maximum call stack size exceeded$/, 'récursion infinie (pile pleine)')
+    .replace(/^Assignment to constant variable\.$/, 'modification d\'une constante (const)');
+
   Runtime.prototype.fail = function (e, compile) {
-    let msg = e && e.message ? e.message : String(e);
-    if (!e.cppLine && e.stack) {
+    let msg = frMsg(e && e.message ? e.message : String(e));
+    if (e instanceof SyntaxError && !e.cppLine) msg = syntaxMsg(e, this.js);
+    else if (!e.cppLine && e.stack) {
       // ligne dans le code généré (2 lignes d'en-tête de new Function + 1 ligne d'enveloppe)
       const m = /<anonymous>:(\d+):\d+/.exec(e.stack);
       if (m && +m[1] > 3) msg += ' (ligne ' + (+m[1] - 3) + ')';
@@ -1007,13 +1035,168 @@
 
   // Vérifie un programme sans l'exécuter : null si correct, sinon le message d'erreur
   Ard.check = function (code) {
+    let js = null;
     try {
-      const js = transpile(code);
+      js = transpile(code);
       const names = Object.keys(Runtime.prototype.api.call({ rand: Math.random }));
       new Function(names.join(','), 'return function* () {\n' + js + '\n};');
       return null;
     } catch (e) {
-      return e.message;
+      return e instanceof SyntaxError && !e.cppLine ? syntaxMsg(e, js) : e.message;
     }
   };
+
+  // ---- Exemples proposés dans l'éditeur ----
+  Ard.EXAMPLES = [
+    { name: 'Clignotant (LED intégrée)', code: null },
+    { name: 'Bouton → LED', code: `// Bouton entre D4 et GND, LED (+ résistance) entre D18 et GND
+const int BOUTON = 4;
+const int LED = 18;
+
+void setup() {
+  pinMode(BOUTON, INPUT_PULLUP);   // non appuyé = HIGH
+  pinMode(LED, OUTPUT);
+}
+
+void loop() {
+  bool appuye = digitalRead(BOUTON) == LOW;
+  digitalWrite(LED, appuye ? HIGH : LOW);
+  delay(10);
+}
+` },
+    { name: 'Potentiomètre → luminosité', code: `// Potentiomètre : VCC sur 3V3, GND sur GND, OUT sur D34
+// LED (+ résistance) sur D18, luminosité par PWM
+const int POT = 34;
+const int LED = 18;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED, OUTPUT);
+}
+
+void loop() {
+  int brut = analogRead(POT);              // 0 … 4095
+  int pwm = map(brut, 0, 4095, 0, 255);
+  analogWrite(LED, pwm);
+  Serial.printf("pot = %4d  pwm = %3d\\n", brut, pwm);
+  delay(200);
+}
+` },
+    { name: 'WiFi : émetteur UDP (bouton)', code: `// Envoie l'état du bouton (D4 → GND) à toutes les cartes du réseau « atelier »
+#include <WiFi.h>
+#include <WiFiUdp.h>
+
+const char* ssid = "atelier";
+const char* motDePasse = "12345678";
+const int PORT = 4210;
+const int BOUTON = 4;
+
+WiFiUDP udp;
+int dernier = -1;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(BOUTON, INPUT_PULLUP);
+  WiFi.begin(ssid, motDePasse);
+  Serial.print("Connexion");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+  Serial.println();
+  Serial.print("Connecté, IP : ");
+  Serial.println(WiFi.localIP());
+  udp.begin(PORT);
+}
+
+void loop() {
+  int etat = digitalRead(BOUTON);
+  if (etat != dernier) {
+    dernier = etat;
+    String msg = etat == LOW ? "ON" : "OFF";
+    udp.beginPacket(WiFi.broadcastIP(), PORT);   // à tout le réseau
+    udp.print(msg);
+    udp.endPacket();
+    Serial.println("envoyé : " + msg);
+  }
+  delay(20);
+}
+` },
+    { name: 'WiFi : récepteur UDP (LED)', code: `// Reçoit « ON » / « OFF » sur le réseau « atelier » et pilote la LED de D18
+#include <WiFi.h>
+#include <WiFiUdp.h>
+
+const char* ssid = "atelier";
+const char* motDePasse = "12345678";
+const int PORT = 4210;
+const int LED = 18;
+
+WiFiUDP udp;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED, OUTPUT);
+  WiFi.begin(ssid, motDePasse);
+  while (WiFi.status() != WL_CONNECTED) delay(100);
+  Serial.print("IP : ");
+  Serial.println(WiFi.localIP());
+  udp.begin(PORT);
+}
+
+void loop() {
+  if (udp.parsePacket()) {
+    String msg = udp.readString();
+    Serial.print("reçu de ");
+    Serial.print(udp.remoteIP());
+    Serial.println(" : " + msg);
+    digitalWrite(LED, msg == "ON" ? HIGH : LOW);
+  }
+  delay(10);
+}
+` },
+    { name: 'WiFi : point d\'accès + réponse', code: `// Crée le réseau « esp-ap » et répond « pong » à chaque message reçu
+#include <WiFi.h>
+#include <WiFiUdp.h>
+
+WiFiUDP udp;
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.softAP("esp-ap", "motdepasse");
+  Serial.print("Point d'accès, IP : ");
+  Serial.println(WiFi.softAPIP());
+  udp.begin(5000);
+}
+
+void loop() {
+  if (udp.parsePacket()) {
+    String msg = udp.readString();
+    Serial.println("reçu : " + msg);
+    udp.beginPacket(udp.remoteIP(), udp.remotePort());
+    udp.print("pong " + msg);
+    udp.endPacket();
+  }
+  delay(10);
+}
+` },
+    { name: 'Moniteur série : commandes', code: `// Taper « on » ou « off » dans le moniteur série (onglet Simulateur)
+void setup() {
+  Serial.begin(115200);
+  pinMode(2, OUTPUT);
+  Serial.println("Commandes : on, off");
+}
+
+void loop() {
+  if (Serial.available()) {
+    String cmd = Serial.readStringUntil('\\n');
+    cmd.trim();
+    if (cmd == "on") digitalWrite(2, HIGH);
+    else if (cmd == "off") digitalWrite(2, LOW);
+    else Serial.println("inconnu : " + cmd);
+    Serial.println("LED : " + String(digitalRead(2) ? "allumée" : "éteinte"));
+  }
+  delay(10);
+}
+` }
+  ];
 })();

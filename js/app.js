@@ -140,6 +140,7 @@
         return '<div class="field"><label>' + esc(k) + (def.id === 'connector' && k === 'canal' ? ' (même canal = relié)' : '') + '</label>' +
           '<input data-prop="' + esc(k) + '" type="' + type + '" step="any" value="' + esc(v) + '"></div>';
       }).join('') +
+      (def.mcu ? mcuSection(c, def) : '') +
       (def.pinChoices ? pinChooser(c, def, connections) : '<div class="field"><label>pôles</label>' + def.pins.map(p =>
         '<div class="row"><span style="flex:1">' + esc(p.name) + '</span><span class="muted">' + p.type + ' · ' + connections(p.name) + ' fil(s)</span></div>').join('') + '</div>') +
       '<div class="row"><button id="insRot">pivoter 90°</button><button id="insDel" class="danger">supprimer</button></div>' +
@@ -154,9 +155,62 @@
       };
     });
     if (def.pinChoices) bindPinChooser(box, c, def);
+    if (def.mcu) $('insCode').onclick = () => openCode(b, c, def);
     $('insRot').onclick = rotateSelection;
     $('insDel').onclick = deleteSelection;
   }
+
+  // ---- Programme C++ d'une carte ----
+  function mcuSection(c, def) {
+    const code = App.Arduino.codeOf(c, def);
+    const err = App.Arduino.check(code);
+    return '<div class="field"><label>programme C++</label><div class="row">' +
+      '<button id="insCode">✎ éditer le programme</button>' +
+      '<span class="' + (err ? 'status err' : 'muted') + '" title="' + esc(err || '') + '">' +
+        (err ? '⚠ erreur' : '✓ ' + code.split('\n').length + ' lignes') + '</span></div></div>';
+  }
+
+  let codeTarget = null, checkTimer = null;
+  function openCode(b, c, def) {
+    codeTarget = { b, c, def };
+    $('codeTitle').textContent = 'Programme C++ — ' + (c.label || def.name) + ' (' + b.name + ')';
+    $('codeEditor').value = App.Arduino.codeOf(c, def);
+    $('codeExample').innerHTML = '<option value="">— choisir —</option>' +
+      App.Arduino.EXAMPLES.map((e, i) => '<option value="' + i + '">' + esc(e.name) + '</option>').join('');
+    checkCode();
+    $('codeDialog').showModal();
+    $('codeEditor').focus();
+  }
+  function checkCode() {
+    const err = App.Arduino.check($('codeEditor').value);
+    $('codeStatus').textContent = err ? '⚠ ' + err : '✓ programme valide';
+    $('codeStatus').className = 'status ' + (err ? 'err' : 'ok');
+    return !err;
+  }
+  App.tabIndent($('codeEditor'));
+  $('codeEditor').addEventListener('input', () => { clearTimeout(checkTimer); checkTimer = setTimeout(checkCode, 400); });
+  $('codeExample').onchange = (e) => {
+    const ex = App.Arduino.EXAMPLES[+e.target.value];
+    e.target.value = '';
+    if (!ex || !codeTarget) return;
+    if (!confirm('Remplacer le programme par l\'exemple « ' + ex.name + ' » ?')) return;
+    $('codeEditor').value = ex.code || codeTarget.def.code;
+    checkCode();
+  };
+  $('codeCheck').onclick = () => { if (checkCode()) App.toast('programme valide'); };
+  $('codeCancel').onclick = () => $('codeDialog').close();
+  $('codeSave').onclick = () => {
+    if (!codeTarget) return;
+    const { c } = codeTarget;
+    c.code = $('codeEditor').value;
+    $('codeDialog').close();
+    App.changed('comp');   // la carte redémarre avec le nouveau programme
+    const ok = checkCode();
+    App.toast(ok ? 'programme enregistré — la carte redémarre' : 'programme enregistré, mais il contient une erreur', !ok);
+  };
+  $('codeDialog').addEventListener('cancel', (e) => {
+    if (codeTarget && $('codeEditor').value !== App.Arduino.codeOf(codeTarget.c, codeTarget.def) && !confirm('Fermer sans enregistrer ?')) e.preventDefault();
+  });
 
   // Choix des broches d'une instance (définitions avec pinChoices, ex. carte ESP32)
   function pinChooser(c, def, connections) {
@@ -283,6 +337,19 @@
       });
     });
     if (!any) html += '<p class="muted">Aucun composant interactif ou afficheur.</p>';
+    const mcus = [];
+    App.project.schematics.forEach(s => s.components.forEach(c => {
+      const d = App.getDef(c.type);
+      if (d && d.mcu) mcus.push({ s, c, d, key: App.Sim.compKey(s.id, c.id) });
+    }));
+    if (mcus.length) {
+      html += '<h3 style="margin-top:12px">Réseaux WiFi</h3><div id="simWifi" class="muted">—</div>';
+      mcus.forEach(m => {
+        html += '<h3 style="margin-top:12px">Série — ' + esc(m.c.label || m.d.name) + ' <span class="muted">(' + esc(m.s.name) + ')</span></h3>' +
+          '<pre class="serial" data-serial="' + m.key + '"></pre>' +
+          '<div class="row"><input data-sin="' + m.key + '" placeholder="envoyer (Entrée)…" style="flex:1"><button class="mini" data-sclr="' + m.key + '">effacer</button></div>';
+      });
+    }
     html += '<h3 style="margin-top:12px">Erreurs</h3><div id="simErrors" class="muted">—</div>' +
       '<p class="muted" style="margin-top:12px">Couleur des fils : vert vif = tension &gt; 0,5 V, sombre = 0 V, pointillé gris = flottant. Survoler un fil pour voir sa tension.</p>';
     box.innerHTML = html;
@@ -294,6 +361,17 @@
       b.onpointerup = b.onpointerleave = () => App.Sim.interact(...split(b.dataset.bt), 'up');
     });
     box.querySelectorAll('[data-sl]').forEach(r => r.oninput = () => App.Sim.interact(...split(r.dataset.sl), 'set', +r.value));
+    box.querySelectorAll('[data-sin]').forEach(inp => inp.onkeydown = (e) => {
+      if (e.key !== 'Enter') return;
+      const rt = App.Arduino.runtime(inp.dataset.sin);
+      if (rt) rt.rx += inp.value + '\n';
+      inp.value = '';
+    });
+    box.querySelectorAll('[data-sclr]').forEach(b => b.onclick = () => {
+      const rt = App.Arduino.runtime(b.dataset.sclr);
+      if (rt) rt.serial = '';
+      updateSimPanel();
+    });
     updateSimPanel();
   }
 
@@ -305,6 +383,24 @@
       const st = Sim.states[s.dataset.ro] || {};
       s.textContent = st.text != null ? st.text : st.light != null ? (st.light > 0 ? '● allumée' : '○ éteinte') : '';
     });
+    box.querySelectorAll('[data-serial]').forEach(pre => {
+      const rt = App.Arduino.runtime(pre.dataset.serial), txt = rt ? rt.serial : '';
+      if (pre.textContent === txt) return;
+      const bottom = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 4;
+      pre.textContent = txt;
+      if (bottom) pre.scrollTop = pre.scrollHeight;
+    });
+    const wifi = $('simWifi');
+    if (wifi) {
+      const nets = App.Arduino.networks(), names = Object.keys(nets);
+      const who = (key) => {
+        const [bid, cid] = [key.slice(0, key.indexOf('/')), key.slice(key.indexOf('/') + 1)];
+        const s = App.project.schematics.find(x => x.id === bid), c = s && App.findComp(s, cid), rt = App.Arduino.runtime(key);
+        return esc(c ? c.label || 'ESP32' : '?') + ' <span class="muted">' + esc(rt.ip) + '</span>';
+      };
+      const html = names.length ? names.map(n => '<div><b>' + esc(n) + '</b> : ' + nets[n].map(who).join(' · ') + '</div>').join('') : '—';
+      if (wifi.dataset.html !== html) { wifi.innerHTML = html; wifi.dataset.html = html; }
+    }
     const errs = Object.keys(Sim.errors);
     const e = $('simErrors');
     if (e) e.innerHTML = errs.length ? errs.map(k => '<div style="color:var(--err)">' + esc(k) + ' : ' + esc(Sim.errors[k]) + '</div>').join('') : '—';

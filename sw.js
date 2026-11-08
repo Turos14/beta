@@ -4,7 +4,7 @@
  *    copie en cache en secours ;
  *  - Three.js (CDN, version figée) : cache d'abord.
  */
-const CACHE = 'circuit3d-v2';
+const CACHE = 'circuit3d-v1';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/library.js', 'js/model.js', 'js/sim.js', 'js/arduino.js', 'js/schematic.js', 'js/library-editor.js',
